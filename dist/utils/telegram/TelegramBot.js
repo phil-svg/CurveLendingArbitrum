@@ -773,18 +773,5 @@ export async function telegramBotMain(env, eventEmitter) {
         groupID = process.env.TELEGRAM_TEST_GROUP_ID;
     }
     const bot = new TelegramBot(telegramGroupToken, { polling: true });
-    botMonitoringIntervalPrint(bot);
-    bot.on("message", async (msg) => {
-        if (msg.text === "bot u with us") {
-            await new Promise((resolve) => setTimeout(resolve, 650));
-            if (groupID) {
-                bot.sendMessage(msg.chat.id, "always have been");
-            }
-        }
-        if (msg && msg.text && msg.text.toLowerCase() === "print last seen") {
-            await new Promise((resolve) => setTimeout(resolve, 650));
-            await processLastSeen(eventEmitter);
-        }
-    });
 }
 //# sourceMappingURL=TelegramBot.js.map
