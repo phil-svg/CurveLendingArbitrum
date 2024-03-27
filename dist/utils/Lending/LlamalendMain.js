@@ -171,10 +171,10 @@ async function getAllLendingMarkets() {
 async function histoMode(allLendingMarkets, eventEmitter) {
     const LENDING_LAUNCH_BLOCK = 193652535; // arbitrum
     const PRESENT = await getCurrentBlockNumber();
-    const START_BLOCK = LENDING_LAUNCH_BLOCK;
-    const END_BLOCK = PRESENT;
-    // const START_BLOCK = 194005879;
-    // const END_BLOCK = 194005879;
+    // const START_BLOCK = LENDING_LAUNCH_BLOCK;
+    // const END_BLOCK = PRESENT;
+    const START_BLOCK = 194772471;
+    const END_BLOCK = 194772471;
     console.log("start");
     for (const market of allLendingMarkets) {
         // used to filter for only 1 market to speed up debugging, works for address of vault, controller, or amm
