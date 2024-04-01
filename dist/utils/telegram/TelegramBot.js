@@ -683,7 +683,7 @@ export function buildSoftLiquidateMessage(market, txHash, agentAddress, parsedSo
         direction = "de";
     }
     return `
-User${hyperlink(agentURL, shortenAgent)} ${direction}-liquidated ${formatForPrint(parsedSoftLiquidatedAmount)}${collat_Link} ($${Number(collatDollarAmount.toFixed(0)).toLocaleString()}) with ${formatForPrint(parsedRepaidAmount)}${borrowedTokenLink} ($${formatForPrint(repaidBorrrowTokenDollarAmount)})
+User${hyperlink(agentURL, shortenAgent)} ${direction}-liquidated ${formatForPrint(parsedSoftLiquidatedAmount)}${collat_Link} ($${Number(collatDollarAmount.toFixed(2)).toLocaleString()}) with ${formatForPrint(parsedRepaidAmount)}${borrowedTokenLink} ($${Number(repaidBorrrowTokenDollarAmount.toFixed(2)).toLocaleString()})
 Market:${hyperlink(vaultURL, market.market_name)}
 Discount: $${formatForPrint(discountAmount)}
 Lending APY: ${calculateAPYFromAPR(lendApr).toFixed(2)}% | Borrow APY: ${calculateAPYFromAPR(borrowApr).toFixed(2)}%

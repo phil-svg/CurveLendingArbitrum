@@ -306,8 +306,8 @@ async function histoMode(allLendingMarkets: EnrichedLendingMarketEvent[], eventE
   // const START_BLOCK = LENDING_LAUNCH_BLOCK;
   // const END_BLOCK = PRESENT;
 
-  const START_BLOCK = 196516896;
-  const END_BLOCK = 196516896;
+  const START_BLOCK = 196554708;
+  const END_BLOCK = 196554708;
 
   console.log("start");
 
