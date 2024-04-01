@@ -49,18 +49,23 @@ function calculateBips(priceBefore, priceAfter) {
     return Number(bips.toFixed(4));
 }
 function formatForPrint(someNumber) {
-    if (typeof someNumber === "string" && someNumber.includes(","))
+    if (typeof someNumber === "string" && someNumber.includes(",")) {
         return someNumber;
-    //someNumber = Math.abs(someNumber);
-    if (someNumber > 100) {
-        someNumber = Number(Number(someNumber).toFixed(0)).toLocaleString();
     }
-    else if (someNumber > 5) {
-        someNumber = Number(Number(someNumber).toFixed(2)).toLocaleString();
+    let decimalPlaces = 2;
+    if (someNumber > 100) {
+        decimalPlaces = 0;
     }
     else {
-        someNumber = Number(Number(someNumber).toFixed(2)).toLocaleString();
+        for (let threshold = 1, i = 2; i <= 14; i++) {
+            threshold /= 10;
+            if (someNumber > threshold) {
+                decimalPlaces = i;
+                break;
+            }
+        }
     }
+    someNumber = Number(someNumber.toFixed(decimalPlaces)).toLocaleString();
     return someNumber;
 }
 function getShortenNumber(amountStr) {

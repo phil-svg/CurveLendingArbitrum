@@ -135,8 +135,8 @@ async function processLlamalendAmmEvent(market, llamalendVaultContract, controll
         let parsedSoftLiquidatedAmount;
         let parsedRepaidAmount;
         if (event.returnValues.sold_id === "0") {
-            parsedSoftLiquidatedAmount = event.returnValues.tokens_bought / 10 ** market.borrowed_token_decimals;
-            parsedRepaidAmount = event.returnValues.tokens_sold / 10 ** market.collateral_token_decimals;
+            parsedSoftLiquidatedAmount = event.returnValues.tokens_bought / 10 ** market.collateral_token_decimals;
+            parsedRepaidAmount = event.returnValues.tokens_sold / 10 ** market.borrowed_token_decimals;
         }
         else {
             parsedSoftLiquidatedAmount = event.returnValues.tokens_sold / 10 ** market.collateral_token_decimals;
@@ -173,8 +173,8 @@ async function histoMode(allLendingMarkets, eventEmitter) {
     const PRESENT = await getCurrentBlockNumber();
     // const START_BLOCK = LENDING_LAUNCH_BLOCK;
     // const END_BLOCK = PRESENT;
-    const START_BLOCK = 196398609;
-    const END_BLOCK = 196398609;
+    const START_BLOCK = 196516896;
+    const END_BLOCK = 196516896;
     console.log("start");
     for (const market of allLendingMarkets) {
         // used to filter for only 1 market to speed up debugging, works for address of vault, controller, or amm

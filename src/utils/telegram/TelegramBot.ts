@@ -60,15 +60,24 @@ function calculateBips(priceBefore: number, priceAfter: number): number {
 }
 
 function formatForPrint(someNumber: any) {
-  if (typeof someNumber === "string" && someNumber.includes(",")) return someNumber;
-  //someNumber = Math.abs(someNumber);
-  if (someNumber > 100) {
-    someNumber = Number(Number(someNumber).toFixed(0)).toLocaleString();
-  } else if (someNumber > 5) {
-    someNumber = Number(Number(someNumber).toFixed(2)).toLocaleString();
-  } else {
-    someNumber = Number(Number(someNumber).toFixed(2)).toLocaleString();
+  if (typeof someNumber === "string" && someNumber.includes(",")) {
+    return someNumber;
   }
+
+  let decimalPlaces = 2;
+  if (someNumber > 100) {
+    decimalPlaces = 0;
+  } else {
+    for (let threshold = 1, i = 2; i <= 14; i++) {
+      threshold /= 10;
+      if (someNumber > threshold) {
+        decimalPlaces = i;
+        break;
+      }
+    }
+  }
+
+  someNumber = Number(someNumber.toFixed(decimalPlaces)).toLocaleString();
   return someNumber;
 }
 
