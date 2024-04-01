@@ -6,7 +6,6 @@ import { handleLiveEvents, manageMarket, watchingForNewMarketOpenings } from "./
 import { ADDRESS_crvUSD_ControllerFactory } from "./utils/Constants.js";
 import { livemodePegKeepers } from "./utils/pegkeeper/Pegkeeper.js";
 import { ABI_crvUSD_ControllerFactory } from "./utils/abis/ABI_crvUSD_ControllerFactory.js";
-import { conductResearch } from "./research/Research.js";
 import { launchCurveLendingMonitoring } from "./utils/Lending/LlamalendMain.js";
 
 console.clear();
@@ -49,7 +48,6 @@ async function launchClassicCrvUSDMonitoring() {
 async function main() {
   await telegramBotMain(ENV, eventEmitter);
   await launchCurveLendingMonitoring(eventEmitter);
-  // await launchClassicCrvUSDMonitoring();
 }
 
 await main();

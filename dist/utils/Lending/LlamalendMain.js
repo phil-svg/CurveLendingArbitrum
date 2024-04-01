@@ -173,8 +173,8 @@ async function histoMode(allLendingMarkets, eventEmitter) {
     const PRESENT = await getCurrentBlockNumber();
     // const START_BLOCK = LENDING_LAUNCH_BLOCK;
     // const END_BLOCK = PRESENT;
-    const START_BLOCK = 194772471;
-    const END_BLOCK = 194772471;
+    const START_BLOCK = 196398609;
+    const END_BLOCK = 196398609;
     console.log("start");
     for (const market of allLendingMarkets) {
         // used to filter for only 1 market to speed up debugging, works for address of vault, controller, or amm
@@ -247,10 +247,12 @@ export async function launchCurveLendingMonitoring(eventEmitter) {
         return;
     }
     // console.log("allEnrichedLendingMarkets", allEnrichedLendingMarkets);
+    // process.exit();
     // await histoMode(allEnrichedLendingMarkets, eventEmitter);
     await liveMode(allEnrichedLendingMarkets, eventEmitter);
 }
 /*
+
 allEnrichedLendingMarkets [
   {
     id: '0',
@@ -281,7 +283,68 @@ allEnrichedLendingMarkets [
     borrowed_token_symbol: 'crvUSD',
     borrowed_token_decimals: 18,
     market_name: 'WBTC Long'
+  },
+  {
+    id: '2',
+    collateral_token: '0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f',
+    borrowed_token: '0x498Bf2B1e120FeD3ad3D42EA2165E9b73f99C1e5',
+    vault: '0xB50409Dd4D5B418042ab4DCee6a2FA7D1FE2fcf8',
+    controller: '0x28c20590de7539C316191F413686dcF794d8898E',
+    amm: '0x772B6Fb77aD572161Cc535661439184453Ee5c41',
+    price_oracle: '0x9B053d1C660c73a22c1fE5d7F9189Cf7D8fa46bd',
+    monetary_policy: '0xBcAbDED2d23162d1e3351a9a713543E2CeE79559',
+    collateral_token_symbol: 'WBTC',
+    collateral_token_decimals: 8,
+    borrowed_token_symbol: 'crvUSD',
+    borrowed_token_decimals: 18,
+    market_name: 'WBTC Long'
+  },
+  {
+    id: '3',
+    collateral_token: '0x5f851F67D24419982EcD7b7765deFD64fBb50a97',
+    borrowed_token: '0x498Bf2B1e120FeD3ad3D42EA2165E9b73f99C1e5',
+    vault: '0x7d622A3615B34abf84Ac255b8C8D1685ea3a433F',
+    controller: '0x5014AB37Fca7201baDEc3C0d0f28Dc7899cdC7D5',
+    amm: '0xD5E569B0020b5D30d44Eea5f8d328aAA4dB2FdFF',
+    price_oracle: '0xd7e753478E2f3Fa9b7f1bEd19737691024299e85',
+    monetary_policy: '0x7Ea0c2b62687FD16FDD2F2332f1475585B19A82c',
+    collateral_token_symbol: 'gmUSDC',
+    collateral_token_decimals: 6,
+    borrowed_token_symbol: 'crvUSD',
+    borrowed_token_decimals: 18,
+    market_name: 'gmUSDC Long'
+  },
+  {
+    id: '4',
+    collateral_token: '0x11cDb42B0EB46D95f990BeDD4695A6e3fA034978',
+    borrowed_token: '0x498Bf2B1e120FeD3ad3D42EA2165E9b73f99C1e5',
+    vault: '0xeEaF2ccB73A01deb38Eca2947d963D64CfDe6A32',
+    controller: '0x88f88e937Db48bBfe8E3091718576430704e47Ab',
+    amm: '0x742089D51DD708dE2C728aA7F3172f28fe419424',
+    price_oracle: '0x20ee737f3BBA55D3EEE64B226dF47c575B6538C9',
+    monetary_policy: '0x1F56Fb63e54F459a9b448D8feECd40AEf3D27B21',
+    collateral_token_symbol: 'CRV',
+    collateral_token_decimals: 18,
+    borrowed_token_symbol: 'crvUSD',
+    borrowed_token_decimals: 18,
+    market_name: 'CRV Long'
+  },
+  {
+    id: '5',
+    collateral_token: '0x912CE59144191C1204E64559FE8253a0e49E6548',
+    borrowed_token: '0x498Bf2B1e120FeD3ad3D42EA2165E9b73f99C1e5',
+    vault: '0x65592b1F12c07D434e95c7BF87F4f2f464e950e4',
+    controller: '0x76709bC0dA299Ab0234EEC51385E900922AE98f5',
+    amm: '0x33e5ea2f7E7f050d1c2e981d659e37B2445aEE09',
+    price_oracle: '0x6341D0C2d96C73666ab4B491c41dbcFA6F9e696C',
+    monetary_policy: '0xc4fFBf2CeCeEf36BaDA8aA5054d77f770341eCA0',
+    collateral_token_symbol: 'ARB',
+    collateral_token_decimals: 18,
+    borrowed_token_symbol: 'crvUSD',
+    borrowed_token_decimals: 18,
+    market_name: 'ARB Long'
   }
 ]
+
 */
 //# sourceMappingURL=LlamalendMain.js.map

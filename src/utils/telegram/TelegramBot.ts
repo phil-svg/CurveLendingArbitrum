@@ -34,7 +34,7 @@ function getBuyerURL(buyerAddress: string) {
 }
 
 function getCurveLendingURL(id: string): string {
-  return `https://lend.curve.fi/#/ethereum/markets/one-way-market-${id}/create/`;
+  return `https://lend.curve.fi/#/arbitrum/markets/one-way-market-${id}/create/`;
 }
 
 function getProfitPrint(profit: any, revenue: any, cost: any) {
@@ -737,7 +737,7 @@ export function buildLendingMarketDepositMessage(
 Market:${hyperlink(vaultURL, market.market_name)}
 Lending APY: ${calculateAPYFromAPR(lendApr).toFixed(2)}% | Borrow APY: ${calculateAPYFromAPR(borrowApr).toFixed(2)}%
 Borrowed: ${getShortenNumberFixed(totalDebtInMarket)} out of ${getShortenNumberFixed(totalAssets)}${borrowedTokenLink}
-Links:${arbiscanLink} |${eigenphiLink} 🦙🦙🦙
+Links:${arbiscanLink} |${curveLendingLink} 🦙🦙🦙
 `;
 }
 
@@ -776,7 +776,7 @@ User${hyperlink(agentURL, shortenAgent)} removed ${formatForPrint(parsedWithdraw
 Market:${hyperlink(vaultURL, market.market_name)}
 Lending APY: ${calculateAPYFromAPR(lendApr).toFixed(2)}% | Borrow APY: ${calculateAPYFromAPR(borrowApr).toFixed(2)}%
 Borrowed: ${getShortenNumberFixed(totalDebtInMarket)} out of ${getShortenNumberFixed(totalAssets)}${borrowedTokenLink}
-Links:${arbiscanLink} |${eigenphiLink} 🦙🦙🦙
+Links:${arbiscanLink} |${curveLendingLink} 🦙🦙🦙
 `;
 }
 
@@ -835,7 +835,7 @@ Market:${hyperlink(vaultURL, market.market_name)}
 ${positionHealthLine}
 Lending APY: ${calculateAPYFromAPR(lendApr).toFixed(2)}% | Borrow APY: ${calculateAPYFromAPR(borrowApr).toFixed(2)}%
 Borrowed: ${getShortenNumberFixed(totalDebtInMarket)} out of ${getShortenNumberFixed(totalAssets)}${borrowedTokenLink}
-Links:${arbiscanLink} |${eigenphiLink} 🦙🦙🦙
+Links:${arbiscanLink} |${curveLendingLink} 🦙🦙🦙
 `;
 }
 
@@ -891,7 +891,7 @@ Market:${hyperlink(vaultURL, market.market_name)}
 ${positionHealthLine}
 Lending APY: ${calculateAPYFromAPR(lendApr).toFixed(2)}% | Borrow APY: ${calculateAPYFromAPR(borrowApr).toFixed(2)}%
 Borrowed: ${getShortenNumberFixed(totalDebtInMarket)} out of ${getShortenNumberFixed(totalAssets)}${borrowedTokenLink}
-Links:${arbiscanLink} |${eigenphiLink} 🦙🦙🦙
+Links:${arbiscanLink} |${curveLendingLink} 🦙🦙🦙
 `;
 }
 
@@ -935,7 +935,7 @@ ${positionHealthLine}
 Market:${hyperlink(vaultURL, market.market_name)}
 Lending APY: ${calculateAPYFromAPR(lendApr).toFixed(2)}% | Borrow APY: ${calculateAPYFromAPR(borrowApr).toFixed(2)}%
 Borrowed: ${getShortenNumberFixed(totalDebtInMarket)} out of ${getShortenNumberFixed(totalAssets)}${borrowedTokenLink}
-Links:${arbiscanLink} |${eigenphiLink} 🦙🦙🦙
+Links:${arbiscanLink} |${curveLendingLink} 🦙🦙🦙
 `;
 }
 
@@ -976,7 +976,7 @@ User${hyperlink(liquidatorURL, shortenAddress(liquidatorAddress))} self-liquidat
 Market:${hyperlink(vaultURL, market.market_name)}
 Lending APY: ${calculateAPYFromAPR(lendApr).toFixed(2)}% | Borrow APY: ${calculateAPYFromAPR(borrowApr).toFixed(2)}%
 Borrowed: ${getShortenNumberFixed(totalDebtInMarket)} out of ${getShortenNumberFixed(totalAssets)}${borrowedTokenLink}
-Links:${arbiscanLink} |${eigenphiLink} 🦙🦙🦙
+Links:${arbiscanLink} |${curveLendingLink} 🦙🦙🦙
 `;
 }
 
@@ -1023,7 +1023,7 @@ Discount: $${formatForPrint(discountAmount)}
 Affected User:${hyperlink(poorFellaURL, shortenAddress(poorFellaAddress))}
 Lending APY: ${calculateAPYFromAPR(lendApr).toFixed(2)}% | Borrow APY: ${calculateAPYFromAPR(borrowApr).toFixed(2)}%
 Borrowed: ${getShortenNumberFixed(totalDebtInMarket)} out of ${getShortenNumberFixed(totalAssets)}${borrowedTokenLink}
-Links:${arbiscanLink} |${eigenphiLink} 🦙🦙🦙
+Links:${arbiscanLink} |${curveLendingLink} 🦙🦙🦙
 `;
 }
 
@@ -1075,7 +1075,7 @@ Market:${hyperlink(vaultURL, market.market_name)}
 Discount: $${formatForPrint(discountAmount)}
 Lending APY: ${calculateAPYFromAPR(lendApr).toFixed(2)}% | Borrow APY: ${calculateAPYFromAPR(borrowApr).toFixed(2)}%
 Borrowed: ${getShortenNumberFixed(totalDebtInMarket)} out of ${getShortenNumberFixed(totalAssets)}${borrowedTokenLink}
-Links:${arbiscanLink} |${eigenphiLink} 🦙🦙🦙
+Links:${arbiscanLink} |${curveLendingLink} 🦙🦙🦙
 `;
 }
 

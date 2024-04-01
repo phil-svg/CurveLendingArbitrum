@@ -26,7 +26,7 @@ function getBuyerURL(buyerAddress) {
     return "https://arbiscan.io/address/" + buyerAddress;
 }
 function getCurveLendingURL(id) {
-    return `https://lend.curve.fi/#/ethereum/markets/one-way-market-${id}/create/`;
+    return `https://lend.curve.fi/#/arbitrum/markets/one-way-market-${id}/create/`;
 }
 function getProfitPrint(profit, revenue, cost) {
     if (profit > revenue * 0.5)
@@ -495,7 +495,7 @@ export function buildLendingMarketDepositMessage(market, txHash, dollarAmount, a
 Market:${hyperlink(vaultURL, market.market_name)}
 Lending APY: ${calculateAPYFromAPR(lendApr).toFixed(2)}% | Borrow APY: ${calculateAPYFromAPR(borrowApr).toFixed(2)}%
 Borrowed: ${getShortenNumberFixed(totalDebtInMarket)} out of ${getShortenNumberFixed(totalAssets)}${borrowedTokenLink}
-Links:${arbiscanLink} |${eigenphiLink} 🦙🦙🦙
+Links:${arbiscanLink} |${curveLendingLink} 🦙🦙🦙
 `;
 }
 export function buildLendingMarketWithdrawMessage(market, txHash, dollarAmount, agentAddress, parsedWithdrawnBorrowTokenAmount, borrowApr, lendApr, totalAssets, totalDebtInMarket) {
@@ -517,7 +517,7 @@ User${hyperlink(agentURL, shortenAgent)} removed ${formatForPrint(parsedWithdraw
 Market:${hyperlink(vaultURL, market.market_name)}
 Lending APY: ${calculateAPYFromAPR(lendApr).toFixed(2)}% | Borrow APY: ${calculateAPYFromAPR(borrowApr).toFixed(2)}%
 Borrowed: ${getShortenNumberFixed(totalDebtInMarket)} out of ${getShortenNumberFixed(totalAssets)}${borrowedTokenLink}
-Links:${arbiscanLink} |${eigenphiLink} 🦙🦙🦙
+Links:${arbiscanLink} |${curveLendingLink} 🦙🦙🦙
 `;
 }
 // CONTROLLER-MESSAGES
@@ -553,7 +553,7 @@ Market:${hyperlink(vaultURL, market.market_name)}
 ${positionHealthLine}
 Lending APY: ${calculateAPYFromAPR(lendApr).toFixed(2)}% | Borrow APY: ${calculateAPYFromAPR(borrowApr).toFixed(2)}%
 Borrowed: ${getShortenNumberFixed(totalDebtInMarket)} out of ${getShortenNumberFixed(totalAssets)}${borrowedTokenLink}
-Links:${arbiscanLink} |${eigenphiLink} 🦙🦙🦙
+Links:${arbiscanLink} |${curveLendingLink} 🦙🦙🦙
 `;
 }
 export function buildLendingMarketRepayMessage(market, txHash, positionHealth, totalDebtInMarket, agentAddress, parsedRepayAmount, collatDollarAmount, parsedCollatAmount, repayDollarAmount, borrowApr, lendApr, totalAssets) {
@@ -585,7 +585,7 @@ Market:${hyperlink(vaultURL, market.market_name)}
 ${positionHealthLine}
 Lending APY: ${calculateAPYFromAPR(lendApr).toFixed(2)}% | Borrow APY: ${calculateAPYFromAPR(borrowApr).toFixed(2)}%
 Borrowed: ${getShortenNumberFixed(totalDebtInMarket)} out of ${getShortenNumberFixed(totalAssets)}${borrowedTokenLink}
-Links:${arbiscanLink} |${eigenphiLink} 🦙🦙🦙
+Links:${arbiscanLink} |${curveLendingLink} 🦙🦙🦙
 `;
 }
 export function buildLendingMarketRemoveCollateralMessage(market, parsedCollatAmount, txHash, agentAddress, positionHealth, collatDollarAmount, totalDebtInMarket, borrowApr, lendApr, totalAssets) {
@@ -609,7 +609,7 @@ ${positionHealthLine}
 Market:${hyperlink(vaultURL, market.market_name)}
 Lending APY: ${calculateAPYFromAPR(lendApr).toFixed(2)}% | Borrow APY: ${calculateAPYFromAPR(borrowApr).toFixed(2)}%
 Borrowed: ${getShortenNumberFixed(totalDebtInMarket)} out of ${getShortenNumberFixed(totalAssets)}${borrowedTokenLink}
-Links:${arbiscanLink} |${eigenphiLink} 🦙🦙🦙
+Links:${arbiscanLink} |${curveLendingLink} 🦙🦙🦙
 `;
 }
 export function buildLendingMarketSelfLiquidateMessage(market, parsedBorrowTokenAmountSentByBotFromReceiptForHardLiquidation, borrowTokenDollarAmount, parsedCollatAmount, collarDollarValue, txHash, totalDebtInMarket, borrowApr, lendApr, totalAssets, liquidatorAddress) {
@@ -629,7 +629,7 @@ User${hyperlink(liquidatorURL, shortenAddress(liquidatorAddress))} self-liquidat
 Market:${hyperlink(vaultURL, market.market_name)}
 Lending APY: ${calculateAPYFromAPR(lendApr).toFixed(2)}% | Borrow APY: ${calculateAPYFromAPR(borrowApr).toFixed(2)}%
 Borrowed: ${getShortenNumberFixed(totalDebtInMarket)} out of ${getShortenNumberFixed(totalAssets)}${borrowedTokenLink}
-Links:${arbiscanLink} |${eigenphiLink} 🦙🦙🦙
+Links:${arbiscanLink} |${curveLendingLink} 🦙🦙🦙
 `;
 }
 export function buildLendingMarketHardLiquidateMessage(market, parsedBorrowTokenAmountSentByBotFromReceiptForHardLiquidation, borrowTokenDollarAmount, parsedCollatAmount, collarDollarValue, txHash, totalDebtInMarket, borrowApr, lendApr, totalAssets, liquidatorAddress, poorFellaAddress) {
@@ -653,7 +653,7 @@ Discount: $${formatForPrint(discountAmount)}
 Affected User:${hyperlink(poorFellaURL, shortenAddress(poorFellaAddress))}
 Lending APY: ${calculateAPYFromAPR(lendApr).toFixed(2)}% | Borrow APY: ${calculateAPYFromAPR(borrowApr).toFixed(2)}%
 Borrowed: ${getShortenNumberFixed(totalDebtInMarket)} out of ${getShortenNumberFixed(totalAssets)}${borrowedTokenLink}
-Links:${arbiscanLink} |${eigenphiLink} 🦙🦙🦙
+Links:${arbiscanLink} |${curveLendingLink} 🦙🦙🦙
 `;
 }
 export function buildSoftLiquidateMessage(market, txHash, agentAddress, parsedSoftLiquidatedAmount, collatDollarAmount, parsedRepaidAmount, repaidBorrrowTokenDollarAmount, borrowApr, lendApr, totalDebtInMarket, totalAssets) {
@@ -683,7 +683,7 @@ Market:${hyperlink(vaultURL, market.market_name)}
 Discount: $${formatForPrint(discountAmount)}
 Lending APY: ${calculateAPYFromAPR(lendApr).toFixed(2)}% | Borrow APY: ${calculateAPYFromAPR(borrowApr).toFixed(2)}%
 Borrowed: ${getShortenNumberFixed(totalDebtInMarket)} out of ${getShortenNumberFixed(totalAssets)}${borrowedTokenLink}
-Links:${arbiscanLink} |${eigenphiLink} 🦙🦙🦙
+Links:${arbiscanLink} |${curveLendingLink} 🦙🦙🦙
 `;
 }
 ////////////////////////////////////////////////////////
