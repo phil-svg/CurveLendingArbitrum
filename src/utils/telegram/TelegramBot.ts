@@ -1047,7 +1047,8 @@ export function buildSoftLiquidateMessage(
   borrowApr: number,
   lendApr: number,
   totalDebtInMarket: number,
-  totalAssets: number
+  totalAssets: number,
+  discountAmount: number
 ): string {
   const vaultURL = getPoolURL(market.vault);
 
@@ -1062,8 +1063,6 @@ export function buildSoftLiquidateMessage(
 
   const borrowedTokenURL = getTokenURL(market.borrowed_token);
   const borrowedTokenLink = hyperlink(borrowedTokenURL, market.borrowed_token_symbol);
-
-  const discountAmount = Math.abs(collatDollarAmount - repaidBorrrowTokenDollarAmount);
 
   const curveLendingLink = hyperlink(getCurveLendingURL(market.id), "lend.curve.fi");
   const arbiscanLink = hyperlink(TX_HASH_URL_arbiscan, "arbiscan.io");

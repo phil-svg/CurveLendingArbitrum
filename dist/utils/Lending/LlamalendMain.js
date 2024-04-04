@@ -157,14 +157,14 @@ async function processLlamalendAmmEvent(market, llamalendVaultContract, controll
         }
         const collatDollarAmount = collatTokenDollarPricePerUnit * parsedSoftLiquidatedAmount;
         const repaidBorrrowTokenDollarAmount = parsedRepaidAmount * borrowedTokenDollarPricePerUnit;
-        const discountAmount = Math.abs(collatDollarAmount - repaidBorrrowTokenDollarAmount);
+        const discountAmount = repaidBorrrowTokenDollarAmount * market.fee;
         if (discountAmount < LENDING_MIN_LIQUIDATION_DISCOUNT_WORTH_PRINTING)
             return;
         const totalDebtInMarket = await getTotalDebtInMarket(market, controllerContract, event.blockNumber);
         const borrowApr = await getBorrowApr(llamalendVaultContract, event.blockNumber);
         const lendApr = await getLendApr(llamalendVaultContract, event.blockNumber);
         const totalAssets = await getTotalAssets(market, llamalendVaultContract, event.blockNumber);
-        const message = buildSoftLiquidateMessage(market, txHash, agentAddress, parsedSoftLiquidatedAmount, collatDollarAmount, parsedRepaidAmount, repaidBorrrowTokenDollarAmount, borrowApr, lendApr, totalDebtInMarket, totalAssets);
+        const message = buildSoftLiquidateMessage(market, txHash, agentAddress, parsedSoftLiquidatedAmount, collatDollarAmount, parsedRepaidAmount, repaidBorrrowTokenDollarAmount, borrowApr, lendApr, totalDebtInMarket, totalAssets, discountAmount);
         eventEmitter.emit("newMessage", message);
     }
 }
@@ -189,7 +189,7 @@ async function histoMode(allLendingMarkets, eventEmitter) {
     const PRESENT = await getCurrentBlockNumber();
     // const START_BLOCK = LENDING_LAUNCH_BLOCK;
     // const END_BLOCK = PRESENT;
-    const START_BLOCK = 197283034;
+    const START_BLOCK = 197424591;
     const END_BLOCK = START_BLOCK;
     console.log("start");
     for (const market of allLendingMarkets) {
@@ -283,7 +283,8 @@ allEnrichedLendingMarkets [
     collateral_token_decimals: 18,
     borrowed_token_symbol: 'crvUSD',
     borrowed_token_decimals: 18,
-    market_name: 'WETH Long'
+    market_name: 'WETH Long',
+    fee: 0.006
   },
   {
     id: '1',
@@ -298,7 +299,8 @@ allEnrichedLendingMarkets [
     collateral_token_decimals: 8,
     borrowed_token_symbol: 'crvUSD',
     borrowed_token_decimals: 18,
-    market_name: 'WBTC Long'
+    market_name: 'WBTC Long',
+    fee: 0.006
   },
   {
     id: '2',
@@ -313,7 +315,8 @@ allEnrichedLendingMarkets [
     collateral_token_decimals: 8,
     borrowed_token_symbol: 'crvUSD',
     borrowed_token_decimals: 18,
-    market_name: 'WBTC Long'
+    market_name: 'WBTC Long',
+    fee: 0.005
   },
   {
     id: '3',
@@ -328,7 +331,8 @@ allEnrichedLendingMarkets [
     collateral_token_decimals: 6,
     borrowed_token_symbol: 'crvUSD',
     borrowed_token_decimals: 18,
-    market_name: 'gmUSDC Long'
+    market_name: 'gmUSDC Long',
+    fee: 0.002
   },
   {
     id: '4',
@@ -343,7 +347,8 @@ allEnrichedLendingMarkets [
     collateral_token_decimals: 18,
     borrowed_token_symbol: 'crvUSD',
     borrowed_token_decimals: 18,
-    market_name: 'CRV Long'
+    market_name: 'CRV Long',
+    fee: 0.006
   },
   {
     id: '5',
@@ -358,7 +363,8 @@ allEnrichedLendingMarkets [
     collateral_token_decimals: 18,
     borrowed_token_symbol: 'crvUSD',
     borrowed_token_decimals: 18,
-    market_name: 'ARB Long'
+    market_name: 'ARB Long',
+    fee: 0.0015
   }
 ]
 
