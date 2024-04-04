@@ -1,3 +1,4 @@
+import { LENDING_MIN_HARDLIQ_AMOUNT_WORTH_PRINTING, LENDING_MIN_LIQUIDATION_DISCOUNT_WORTH_PRINTING, LENDING_MIN_LOAN_CHANGE_AMOUNT_WORTH_PRINTING, } from "../../LendingArbitrumBot.js";
 import { getBorrowApr, getCollatDollarValue, getLendApr, getPositionHealth, getTotalAssets, getTotalDebtInMarket } from "../helperFunctions/Lending.js";
 import { web3HttpProvider, webWsProvider } from "../helperFunctions/Web3.js";
 import { getPriceOf_crvUSD } from "../priceAPI/priceAPI.js";
@@ -27,6 +28,8 @@ async function processLlamalendVaultEvent(market, llamalendVaultContract, contro
         const totalAssets = await getTotalAssets(market, llamalendVaultContract, event.blockNumber);
         const totalDebtInMarket = await getTotalDebtInMarket(market, controllerContract, event.blockNumber);
         const dollarAmount = parsedDepositedBorrowTokenAmount * borrowedTokenDollarPricePerUnit;
+        if (dollarAmount < LENDING_MIN_LOAN_CHANGE_AMOUNT_WORTH_PRINTING)
+            return;
         const message = buildLendingMarketDepositMessage(market, txHash, dollarAmount, agentAddress, parsedDepositedBorrowTokenAmount, borrowApr, lendApr, totalAssets, totalDebtInMarket);
         eventEmitter.emit("newMessage", message);
     }
@@ -38,6 +41,8 @@ async function processLlamalendVaultEvent(market, llamalendVaultContract, contro
         const totalAssets = await getTotalAssets(market, llamalendVaultContract, event.blockNumber);
         const totalDebtInMarket = await getTotalDebtInMarket(market, controllerContract, event.blockNumber);
         const dollarAmount = parsedWithdrawnBorrowTokenAmount * borrowedTokenDollarPricePerUnit;
+        if (dollarAmount < LENDING_MIN_LOAN_CHANGE_AMOUNT_WORTH_PRINTING)
+            return;
         const message = buildLendingMarketWithdrawMessage(market, txHash, dollarAmount, agentAddress, parsedWithdrawnBorrowTokenAmount, borrowApr, lendApr, totalAssets, totalDebtInMarket);
         eventEmitter.emit("newMessage", message);
     }
@@ -72,6 +77,8 @@ async function processLlamalendControllerEvent(market, llamalendVaultContract, c
         const parsedCollatAmount = event.returnValues.collateral_increase / 10 ** Number(market.collateral_token_decimals);
         const collatDollarAmount = collatTokenDollarPricePerUnit * parsedCollatAmount;
         const dollarAmountBorrow = parsedBorrowedAmount * borrowedTokenDollarPricePerUnit;
+        if (dollarAmountBorrow < LENDING_MIN_LOAN_CHANGE_AMOUNT_WORTH_PRINTING)
+            return;
         const message = buildLendingMarketBorrowMessage(market, txHash, agentAddress, parsedBorrowedAmount, parsedCollatAmount, positionHealth, totalDebtInMarket, collatDollarAmount, dollarAmountBorrow, borrowApr, lendApr, totalAssets);
         eventEmitter.emit("newMessage", message);
     }
@@ -80,12 +87,16 @@ async function processLlamalendControllerEvent(market, llamalendVaultContract, c
         const parsedCollatAmount = event.returnValues.collateral_decrease / 10 ** Number(market.collateral_token_decimals);
         const collatDollarAmount = collatTokenDollarPricePerUnit * parsedCollatAmount;
         const repayDollarAmount = parsedRepayAmount * borrowedTokenDollarPricePerUnit;
+        if (repayDollarAmount < LENDING_MIN_LOAN_CHANGE_AMOUNT_WORTH_PRINTING)
+            return;
         const message = buildLendingMarketRepayMessage(market, txHash, positionHealth, totalDebtInMarket, agentAddress, parsedRepayAmount, collatDollarAmount, parsedCollatAmount, repayDollarAmount, borrowApr, lendApr, totalAssets);
         eventEmitter.emit("newMessage", message);
     }
     if (event.event === "RemoveCollateral") {
         const parsedCollatAmount = event.returnValues.collateral_decrease / 10 ** Number(market.collateral_token_decimals);
         const collatDollarAmount = collatTokenDollarPricePerUnit * parsedCollatAmount;
+        if (collatDollarAmount < LENDING_MIN_LOAN_CHANGE_AMOUNT_WORTH_PRINTING)
+            return;
         const message = buildLendingMarketRemoveCollateralMessage(market, parsedCollatAmount, txHash, agentAddress, positionHealth, collatDollarAmount, totalDebtInMarket, borrowApr, lendApr, totalAssets);
         eventEmitter.emit("newMessage", message);
     }
@@ -101,6 +112,8 @@ async function processLlamalendControllerEvent(market, llamalendVaultContract, c
         const poorFellaAddress = event.returnValues.user;
         const parsedCollatAmount = event.returnValues.collateral_received / 10 ** market.collateral_token_decimals;
         const collarDollarValue = parsedCollatAmount * collatTokenDollarPricePerUnit;
+        if (collarDollarValue < LENDING_MIN_HARDLIQ_AMOUNT_WORTH_PRINTING)
+            return;
         if (poorFellaAddress.toLowerCase() === liquidatorAddress.toLowerCase()) {
             const message = buildLendingMarketSelfLiquidateMessage(market, parsedBorrowTokenAmountSentByBotFromReceiptForHardLiquidation, borrowTokenDollarAmount, parsedCollatAmount, collarDollarValue, txHash, totalDebtInMarket, borrowApr, lendApr, totalAssets, liquidatorAddress);
             eventEmitter.emit("newMessage", message);
@@ -144,6 +157,9 @@ async function processLlamalendAmmEvent(market, llamalendVaultContract, controll
         }
         const collatDollarAmount = collatTokenDollarPricePerUnit * parsedSoftLiquidatedAmount;
         const repaidBorrrowTokenDollarAmount = parsedRepaidAmount * borrowedTokenDollarPricePerUnit;
+        const discountAmount = Math.abs(collatDollarAmount - repaidBorrrowTokenDollarAmount);
+        if (discountAmount < LENDING_MIN_LIQUIDATION_DISCOUNT_WORTH_PRINTING)
+            return;
         const totalDebtInMarket = await getTotalDebtInMarket(market, controllerContract, event.blockNumber);
         const borrowApr = await getBorrowApr(llamalendVaultContract, event.blockNumber);
         const lendApr = await getLendApr(llamalendVaultContract, event.blockNumber);
@@ -173,8 +189,8 @@ async function histoMode(allLendingMarkets, eventEmitter) {
     const PRESENT = await getCurrentBlockNumber();
     // const START_BLOCK = LENDING_LAUNCH_BLOCK;
     // const END_BLOCK = PRESENT;
-    const START_BLOCK = 196554708;
-    const END_BLOCK = 196554708;
+    const START_BLOCK = 197283034;
+    const END_BLOCK = START_BLOCK;
     console.log("start");
     for (const market of allLendingMarkets) {
         // used to filter for only 1 market to speed up debugging, works for address of vault, controller, or amm

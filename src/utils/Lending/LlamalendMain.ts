@@ -1,3 +1,8 @@
+import {
+  LENDING_MIN_HARDLIQ_AMOUNT_WORTH_PRINTING,
+  LENDING_MIN_LIQUIDATION_DISCOUNT_WORTH_PRINTING,
+  LENDING_MIN_LOAN_CHANGE_AMOUNT_WORTH_PRINTING,
+} from "../../LendingArbitrumBot.js";
 import { EnrichedLendingMarketEvent, EthereumEvent, LendingMarketEvent, LendingMarketEventPayload } from "../Interfaces.js";
 import { getBorrowApr, getCollatDollarValue, getLendApr, getPositionHealth, getTotalAssets, getTotalDebtInMarket } from "../helperFunctions/Lending.js";
 import { web3HttpProvider, webWsProvider } from "../helperFunctions/Web3.js";
@@ -44,6 +49,7 @@ async function processLlamalendVaultEvent(
     const totalAssets = await getTotalAssets(market, llamalendVaultContract, event.blockNumber);
     const totalDebtInMarket = await getTotalDebtInMarket(market, controllerContract, event.blockNumber);
     const dollarAmount = parsedDepositedBorrowTokenAmount * borrowedTokenDollarPricePerUnit;
+    if (dollarAmount < LENDING_MIN_LOAN_CHANGE_AMOUNT_WORTH_PRINTING) return;
     const message = buildLendingMarketDepositMessage(
       market,
       txHash,
@@ -65,6 +71,7 @@ async function processLlamalendVaultEvent(
     const totalAssets = await getTotalAssets(market, llamalendVaultContract, event.blockNumber);
     const totalDebtInMarket = await getTotalDebtInMarket(market, controllerContract, event.blockNumber);
     const dollarAmount = parsedWithdrawnBorrowTokenAmount * borrowedTokenDollarPricePerUnit;
+    if (dollarAmount < LENDING_MIN_LOAN_CHANGE_AMOUNT_WORTH_PRINTING) return;
     const message = buildLendingMarketWithdrawMessage(
       market,
       txHash,
@@ -118,6 +125,7 @@ async function processLlamalendControllerEvent(
     const parsedCollatAmount = event.returnValues.collateral_increase / 10 ** Number(market.collateral_token_decimals);
     const collatDollarAmount = collatTokenDollarPricePerUnit * parsedCollatAmount;
     const dollarAmountBorrow = parsedBorrowedAmount * borrowedTokenDollarPricePerUnit;
+    if (dollarAmountBorrow < LENDING_MIN_LOAN_CHANGE_AMOUNT_WORTH_PRINTING) return;
     const message = buildLendingMarketBorrowMessage(
       market,
       txHash,
@@ -139,6 +147,7 @@ async function processLlamalendControllerEvent(
     const parsedCollatAmount = event.returnValues.collateral_decrease / 10 ** Number(market.collateral_token_decimals);
     const collatDollarAmount = collatTokenDollarPricePerUnit * parsedCollatAmount;
     const repayDollarAmount = parsedRepayAmount * borrowedTokenDollarPricePerUnit;
+    if (repayDollarAmount < LENDING_MIN_LOAN_CHANGE_AMOUNT_WORTH_PRINTING) return;
     const message = buildLendingMarketRepayMessage(
       market,
       txHash,
@@ -158,6 +167,7 @@ async function processLlamalendControllerEvent(
   if (event.event === "RemoveCollateral") {
     const parsedCollatAmount = event.returnValues.collateral_decrease / 10 ** Number(market.collateral_token_decimals);
     const collatDollarAmount = collatTokenDollarPricePerUnit * parsedCollatAmount;
+    if (collatDollarAmount < LENDING_MIN_LOAN_CHANGE_AMOUNT_WORTH_PRINTING) return;
     const message = buildLendingMarketRemoveCollateralMessage(
       market,
       parsedCollatAmount,
@@ -185,6 +195,7 @@ async function processLlamalendControllerEvent(
     const poorFellaAddress = event.returnValues.user;
     const parsedCollatAmount = event.returnValues.collateral_received / 10 ** market.collateral_token_decimals;
     const collarDollarValue = parsedCollatAmount * collatTokenDollarPricePerUnit;
+    if (collarDollarValue < LENDING_MIN_HARDLIQ_AMOUNT_WORTH_PRINTING) return;
 
     if (poorFellaAddress.toLowerCase() === liquidatorAddress.toLowerCase()) {
       const message = buildLendingMarketSelfLiquidateMessage(
@@ -255,6 +266,8 @@ async function processLlamalendAmmEvent(market: EnrichedLendingMarketEvent, llam
 
     const collatDollarAmount = collatTokenDollarPricePerUnit * parsedSoftLiquidatedAmount;
     const repaidBorrrowTokenDollarAmount = parsedRepaidAmount * borrowedTokenDollarPricePerUnit;
+    const discountAmount = Math.abs(collatDollarAmount - repaidBorrrowTokenDollarAmount);
+    if (discountAmount < LENDING_MIN_LIQUIDATION_DISCOUNT_WORTH_PRINTING) return;
     const totalDebtInMarket = await getTotalDebtInMarket(market, controllerContract, event.blockNumber);
     const borrowApr = await getBorrowApr(llamalendVaultContract, event.blockNumber);
     const lendApr = await getLendApr(llamalendVaultContract, event.blockNumber);
@@ -306,8 +319,8 @@ async function histoMode(allLendingMarkets: EnrichedLendingMarketEvent[], eventE
   // const START_BLOCK = LENDING_LAUNCH_BLOCK;
   // const END_BLOCK = PRESENT;
 
-  const START_BLOCK = 196554708;
-  const END_BLOCK = 196554708;
+  const START_BLOCK = 197283034;
+  const END_BLOCK = START_BLOCK;
 
   console.log("start");
 
