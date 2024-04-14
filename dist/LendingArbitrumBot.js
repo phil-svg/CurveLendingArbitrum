@@ -1,8 +1,8 @@
 import { getWeb3WsProvider } from './utils/helperFunctions/Web3.js';
-import { getCurrentBlockNumber, getPastEvents, } from './utils/web3Calls/generic.js';
+import { getCurrentBlockNumber, getPastEvents } from './utils/web3Calls/generic.js';
 import { telegramBotMain } from './utils/telegram/TelegramBot.js';
 import { EventEmitter } from 'events';
-import { handleLiveEvents, manageMarket, watchingForNewMarketOpenings, } from './utils/Oragnizer.js';
+import { handleLiveEvents, manageMarket, watchingForNewMarketOpenings } from './utils/Oragnizer.js';
 import { ADDRESS_crvUSD_ControllerFactory } from './utils/Constants.js';
 import { livemodePegKeepers } from './utils/pegkeeper/Pegkeeper.js';
 import { ABI_crvUSD_ControllerFactory } from './utils/abis/ABI_crvUSD_ControllerFactory.js';
@@ -16,15 +16,15 @@ export const MIN_HARDLIQ_AMOUNT_WORTH_PRINTING = 5000;
 // export const MIN_LIQUIDATION_AMOUNT_WORTH_PRINTING = 0;
 // export const MIN_HARDLIQ_AMOUNT_WORTH_PRINTING = 0;
 // ********************* Lending *********************
-export const LENDING_MIN_LOAN_CHANGE_AMOUNT_WORTH_PRINTING = 1000;
+export const LENDING_MIN_LOAN_CHANGE_AMOUNT_WORTH_PRINTING = 5000;
 export const LENDING_MIN_LIQUIDATION_DISCOUNT_WORTH_PRINTING = 10;
-export const LENDING_MIN_HARDLIQ_AMOUNT_WORTH_PRINTING = 0;
+export const LENDING_MIN_HARDLIQ_AMOUNT_WORTH_PRINTING = 0.1;
 // export const LENDING_MIN_LOAN_CHANGE_AMOUNT_WORTH_PRINTING = 0;
 // export const LENDING_MIN_LIQUIDATION_DISCOUNT_WORTH_PRINTING = 0;
-// export const LENDING_MIN_HARDLIQ_AMOUNT_WORTH_PRINTING = 0;
+// export const LENDING_MIN_HARDLIQ_AMOUNT_WORTH_PRINTING = 0.1;
 // ***************************************************
 const ENV = 'prod';
-// const ENV = "test";
+// const ENV = 'test';
 const eventEmitter = new EventEmitter();
 async function launchClassicCrvUSDMonitoring() {
     const WEB3_WS_PROVIDER = getWeb3WsProvider();
@@ -34,8 +34,7 @@ async function launchClassicCrvUSDMonitoring() {
     await livemodePegKeepers(PRESENT, eventEmitter);
     // await pegkeeperHisto(eventEmitter, 19046609, 19096615);
     const ADDED_MARKET_EVENTS = await getPastEvents(crvUSD_ControllerFactory, 'AddMarket', crvUSD_LAUNCH_BLOCK, PRESENT);
-    if (!(ADDED_MARKET_EVENTS instanceof
-        Array))
+    if (!(ADDED_MARKET_EVENTS instanceof Array))
         return;
     for (const MARKET_CREATION of ADDED_MARKET_EVENTS) {
         await manageMarket(MARKET_CREATION, eventEmitter);

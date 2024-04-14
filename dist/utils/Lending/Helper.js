@@ -1,16 +1,22 @@
-import { web3HttpProvider } from "../helperFunctions/Web3.js";
-import { getCoinDecimals, getCoinSymbol } from "../pegkeeper/Pegkeeper.js";
-import { ABI_LLAMALEND_AMM } from "./Abis.js";
-import { web3Call } from "../web3Calls/generic.js";
+import { web3HttpProvider } from '../helperFunctions/Web3.js';
+import { getCoinDecimals, getCoinSymbol } from '../pegkeeper/Pegkeeper.js';
+import { ABI_LLAMALEND_AMM } from './Abis.js';
+import { web3Call } from '../web3Calls/generic.js';
 export function extractParsedBorrowTokenAmountSentByBotFromReceiptForHardLiquidation(receipt, market) {
     if (!receipt)
         return null;
-    const transferSignature = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
-    const senderAddress = receipt.from.toLowerCase().replace("0x", "");
-    const controllerAddress = market.controller.toLowerCase().replace("0x", "");
-    const logEntry = receipt.logs.find((log) => log.topics[0] === transferSignature &&
-        log.topics[1].toLowerCase().replace("0x000000000000000000000000", "") === senderAddress &&
-        log.topics[2].toLowerCase().replace("0x000000000000000000000000", "") === controllerAddress);
+    const transferSignature = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
+    const controllerAddress = market.controller.toLowerCase().replace('0x', '');
+    const ammAddress = market.amm.toLowerCase().replace('0x', '');
+    const allLogsWithControllerAddress = receipt.logs.filter((log) => log.topics[0] === transferSignature &&
+        log.topics[2].toLowerCase().replace('0x000000000000000000000000', '') === controllerAddress);
+    console.log('allLogsWithControllerAddress', allLogsWithControllerAddress);
+    let logEntry = allLogsWithControllerAddress.find((log) => log.topics[1].toLowerCase().replace('0x000000000000000000000000', '') !== ammAddress);
+    if (!logEntry &&
+        allLogsWithControllerAddress.length === 1 &&
+        allLogsWithControllerAddress[0].topics[1].toLowerCase().replace('0x000000000000000000000000', '') === ammAddress) {
+        logEntry = allLogsWithControllerAddress[0];
+    }
     if (logEntry) {
         const hexValue = logEntry.data;
         const relevantHexValue = hexValue.slice(2);
@@ -18,7 +24,7 @@ export function extractParsedBorrowTokenAmountSentByBotFromReceiptForHardLiquida
         return decimalValue / 10 ** market.borrowed_token_decimals;
     }
     else {
-        console.log("No matching log entry found.");
+        console.log('No matching log entry found.');
         return null;
     }
 }
@@ -26,7 +32,7 @@ export function filterForOnly(targetAddress, market) {
     const normalizedTargetAddress = targetAddress.toLowerCase();
     const marketValues = Object.values(market);
     return marketValues.some((value) => {
-        if (typeof value === "string") {
+        if (typeof value === 'string') {
             return value.toLowerCase() === normalizedTargetAddress;
         }
         return false;
@@ -48,11 +54,11 @@ export async function handleEvent(event) {
 }
 function buildMarketName(collateralTokenSymbol, borrowedTokenSymbol) {
     let token;
-    if (collateralTokenSymbol !== "crvUSD") {
-        return collateralTokenSymbol + " Long";
+    if (collateralTokenSymbol !== 'crvUSD') {
+        return collateralTokenSymbol + ' Long';
     }
     else {
-        return borrowedTokenSymbol + " Short";
+        return borrowedTokenSymbol + ' Short';
     }
 }
 export async function enrichMarketData(allLendingMarkets) {
@@ -63,7 +69,7 @@ export async function enrichMarketData(allLendingMarkets) {
         const borrowedTokenSymbol = await getCoinSymbol(market.borrowed_token, web3HttpProvider);
         const borrowedTokenDecimals = await getCoinDecimals(market.borrowed_token, web3HttpProvider);
         const ammContract = new web3HttpProvider.eth.Contract(ABI_LLAMALEND_AMM, market.amm);
-        let fee = await web3Call(ammContract, "fee", []);
+        let fee = await web3Call(ammContract, 'fee', []);
         // Check if any fetched data is null
         if (!collateralTokenSymbol || !borrowedTokenSymbol || !collateralTokenDecimals || !borrowedTokenDecimals || !fee) {
             return null; // Return null for the whole function if any data couldn't be fetched

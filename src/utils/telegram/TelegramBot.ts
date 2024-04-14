@@ -1,36 +1,40 @@
-import TelegramBot from "node-telegram-bot-api";
-import dotenv from "dotenv";
-import { EventEmitter } from "events";
-import { labels } from "../../Labels.js";
-import { get1InchV5MinAmountInfo, getSwap1InchMinAmountInfo } from "../helperFunctions/1Inch.js";
-import { MIN_HARDLIQ_AMOUNT_WORTH_PRINTING, MIN_LIQUIDATION_AMOUNT_WORTH_PRINTING, MIN_REPAYED_AMOUNT_WORTH_PRINTING } from "../../LendingArbitrumBot.js";
-import { ADDRESS_crvUSD, SWAP_ROUTER } from "../Constants.js";
-import { readFile } from "fs/promises";
-import path from "path";
-import { fileURLToPath } from "url";
-import { EnrichedLendingMarketEvent } from "../Interfaces.js";
-import { generateDefiSaverUrl } from "../defisaver/DefiSaver.js";
-import { calculateAPYFromAPR } from "../helperFunctions/LLAMMA.js";
-dotenv.config({ path: "../.env" });
+import TelegramBot from 'node-telegram-bot-api';
+import dotenv from 'dotenv';
+import { EventEmitter } from 'events';
+import { labels } from '../../Labels.js';
+import { get1InchV5MinAmountInfo, getSwap1InchMinAmountInfo } from '../helperFunctions/1Inch.js';
+import {
+  MIN_HARDLIQ_AMOUNT_WORTH_PRINTING,
+  MIN_LIQUIDATION_AMOUNT_WORTH_PRINTING,
+  MIN_REPAYED_AMOUNT_WORTH_PRINTING,
+} from '../../LendingArbitrumBot.js';
+import { ADDRESS_crvUSD, SWAP_ROUTER } from '../Constants.js';
+import { readFile } from 'fs/promises';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { EnrichedLendingMarketEvent } from '../Interfaces.js';
+import { generateDefiSaverUrl } from '../defisaver/DefiSaver.js';
+import { calculateAPYFromAPR } from '../helperFunctions/LLAMMA.js';
+dotenv.config({ path: '../.env' });
 
 function getTokenURL(tokenAddress: string) {
-  return "https://arbiscan.io/token/" + tokenAddress;
+  return 'https://arbiscan.io/token/' + tokenAddress;
 }
 
 function getPoolURL(poolAddress: string) {
-  return "https://arbiscan.io/address/" + poolAddress;
+  return 'https://arbiscan.io/address/' + poolAddress;
 }
 
 function getTxHashURLfromarbiscan(txHash: string) {
-  return "https://arbiscan.io/tx/" + txHash;
+  return 'https://arbiscan.io/tx/' + txHash;
 }
 
 function getTxHashURLfromEigenPhi(txHash: string) {
-  return "https://eigenphi.io/mev/eigentx/" + txHash;
+  return 'https://eigenphi.io/mev/eigentx/' + txHash;
 }
 
 function getBuyerURL(buyerAddress: string) {
-  return "https://arbiscan.io/address/" + buyerAddress;
+  return 'https://arbiscan.io/address/' + buyerAddress;
 }
 
 function getCurveLendingURL(id: string): string {
@@ -43,16 +47,23 @@ function getProfitPrint(profit: any, revenue: any, cost: any) {
   return `Profit: $${formatForPrint(profit)} | Revenue: $${formatForPrint(revenue)} | Cost: $${formatForPrint(cost)}`;
 }
 
-function getMarketHealthPrint(qtyCollat: number, collateralName: string, collatValue: number, marketBorrowedAmount: number) {
+function getMarketHealthPrint(
+  qtyCollat: number,
+  collateralName: string,
+  collatValue: number,
+  marketBorrowedAmount: number
+) {
   collatValue = formatForPrint(collatValue);
   marketBorrowedAmount = formatForPrint(marketBorrowedAmount);
   qtyCollat = formatForPrint(qtyCollat);
-  return `Collateral: ${getShortenNumber(qtyCollat)} ${collateralName}${getDollarAddOn(collatValue)} | Borrowed: ${getShortenNumber(marketBorrowedAmount)} crvUSD`;
+  return `Collateral: ${getShortenNumber(qtyCollat)} ${collateralName}${getDollarAddOn(
+    collatValue
+  )} | Borrowed: ${getShortenNumber(marketBorrowedAmount)} crvUSD`;
 }
 
 function calculateBips(priceBefore: number, priceAfter: number): number {
-  if (typeof priceBefore !== "number" || typeof priceAfter !== "number" || priceBefore === 0) {
-    throw new Error("Invalid input: priceBefore and priceAfter must be numbers, and priceBefore must not be 0.");
+  if (typeof priceBefore !== 'number' || typeof priceAfter !== 'number' || priceBefore === 0) {
+    throw new Error('Invalid input: priceBefore and priceAfter must be numbers, and priceBefore must not be 0.');
   }
 
   const bips: number = ((priceAfter - priceBefore) / priceBefore) * 10000;
@@ -60,7 +71,7 @@ function calculateBips(priceBefore: number, priceAfter: number): number {
 }
 
 function formatForPrint(someNumber: any) {
-  if (typeof someNumber === "string" && someNumber.includes(",")) {
+  if (typeof someNumber === 'string' && someNumber.includes(',')) {
     return someNumber;
   }
 
@@ -82,7 +93,7 @@ function formatForPrint(someNumber: any) {
 }
 
 function getShortenNumber(amountStr: any) {
-  let amount = parseFloat(amountStr.replace(/,/g, ""));
+  let amount = parseFloat(amountStr.replace(/,/g, ''));
   //amount = roundToNearest(amount);
   if (amount >= 1000000) {
     const millionAmount = amount / 1000000;
@@ -119,8 +130,8 @@ function getShortenNumberFixed(amount: number): string {
 
 function getDollarAddOn(amountStr: any) {
   let amount = amountStr;
-  if (typeof amount === "string") {
-    amount = parseFloat(amountStr.replace(/,/g, ""));
+  if (typeof amount === 'string') {
+    amount = parseFloat(amountStr.replace(/,/g, ''));
   }
   //amount = roundToNearest(amount);
   if (amount >= 1000000) {
@@ -143,18 +154,18 @@ function getDollarAddOn(amountStr: any) {
 }
 
 function hyperlink(link: string, name: string): string {
-  return "<a href='" + link + "/'> " + name + "</a>";
+  return "<a href='" + link + "/'> " + name + '</a>';
 }
 
 function improveMessageContent(message: string): string {
   const replacements: { [key: string]: string } = {
-    undefined: "not available",
-    NaN: "not available",
+    undefined: 'not available',
+    NaN: 'not available',
   };
 
   let improvedMessage = message;
   for (const [keyword, replacement] of Object.entries(replacements)) {
-    improvedMessage = improvedMessage.replace(new RegExp(`\\b${keyword}\\b`, "gi"), replacement);
+    improvedMessage = improvedMessage.replace(new RegExp(`\\b${keyword}\\b`, 'gi'), replacement);
   }
 
   return improvedMessage;
@@ -171,9 +182,9 @@ export function send(bot: any, message: string, groupID: number) {
 
   let improvedMessage = improveMessageContent(message);
 
-  bot.sendMessage(groupID, improvedMessage, { parse_mode: "HTML", disable_web_page_preview: "true" });
+  bot.sendMessage(groupID, improvedMessage, { parse_mode: 'HTML', disable_web_page_preview: 'true' });
 
-  if (!message.startsWith("last seen")) {
+  if (!message.startsWith('last seen')) {
     // Track the message as sent
     sentMessages[key] = true;
 
@@ -185,12 +196,14 @@ export function send(bot: any, message: string, groupID: number) {
 }
 
 function shortenAddress(address: string): string {
-  return address.slice(0, 5) + ".." + address.slice(-2);
+  return address.slice(0, 5) + '..' + address.slice(-2);
 }
 
 function getAddressName(address: string): string {
   // Find label for address
-  const labelObject = labels.find((label: { Address: string }) => label.Address.toLowerCase() === address.toLowerCase());
+  const labelObject = labels.find(
+    (label: { Address: string }) => label.Address.toLowerCase() === address.toLowerCase()
+  );
 
   // If label found, return it. Otherwise, return shortened address
   return labelObject ? labelObject.Label : shortenAddress(address);
@@ -243,19 +256,30 @@ export async function buildLiquidateMessage(formattedEventData: any, controllerA
   let marketHealthPrint = getMarketHealthPrint(qtyCollat, collateralName, collatValue, marketBorrowedAmount);
 
   return `
-  User${hyperlink(liquidatorURL, shortenLiquidator)} ${liquidated} with ${formatForPrint(crvUSD_amount)}${hyperlink(crvUSD_URL, "crvUSD")} and ${formatForPrint(
-    collateral_received
-  )}${hyperlink(COLLATERAL_URL, collateralName)}
-The${hyperlink(AMM_URL, "AMM")} send ${formatForPrint(stablecoin_received)}${hyperlink(crvUSD_URL, "crvUSD")} to the${hyperlink(CONTROLLER_URL, "Controller")}
+  User${hyperlink(liquidatorURL, shortenLiquidator)} ${liquidated} with ${formatForPrint(crvUSD_amount)}${hyperlink(
+    crvUSD_URL,
+    'crvUSD'
+  )} and ${formatForPrint(collateral_received)}${hyperlink(COLLATERAL_URL, collateralName)}
+The${hyperlink(AMM_URL, 'AMM')} send ${formatForPrint(stablecoin_received)}${hyperlink(
+    crvUSD_URL,
+    'crvUSD'
+  )} to the${hyperlink(CONTROLLER_URL, 'Controller')}
 ${revOrLossMessage}
 Borrow APY: ${formatForPrint(borrowRate)}%
 ${marketHealthPrint}
-Marketcap: ${getShortenNumber(formatForPrint(marketCap))}  | Total borrowed: ${getShortenNumber(formatForPrint(crvUSDinCirculation))} | Price: ${crvUSD_price.toFixed(4)}  
-Links:${hyperlink(TX_HASH_URL_arbiscan, "arbiscan.io")} |${hyperlink(TX_HASH_URL_EIGENPHI, "eigenphi.io")} 🦙🦙🦙
+Marketcap: ${getShortenNumber(formatForPrint(marketCap))}  | Total borrowed: ${getShortenNumber(
+    formatForPrint(crvUSDinCirculation)
+  )} | Price: ${crvUSD_price.toFixed(4)}  
+Links:${hyperlink(TX_HASH_URL_arbiscan, 'arbiscan.io')} |${hyperlink(TX_HASH_URL_EIGENPHI, 'eigenphi.io')} 🦙🦙🦙
 `;
 }
 
-export async function buildRemoveCollateralMessage(formattedEventData: any, isDefiSaverAutomatedTx: boolean, isManualSmartWalletTx: boolean, defiSaverUser: string) {
+export async function buildRemoveCollateralMessage(
+  formattedEventData: any,
+  isDefiSaverAutomatedTx: boolean,
+  isManualSmartWalletTx: boolean,
+  defiSaverUser: string
+) {
   let {
     crvUSD_price,
     borrowerHealth,
@@ -288,30 +312,40 @@ export async function buildRemoveCollateralMessage(formattedEventData: any, isDe
 
   let marketHealthPrint = getMarketHealthPrint(qtyCollat, collateralName, collatValue, marketBorrowedAmount);
 
-  if (borrowerHealth !== "no loan") borrowerHealth = formatForPrint(borrowerHealth * 100);
+  if (borrowerHealth !== 'no loan') borrowerHealth = formatForPrint(borrowerHealth * 100);
 
   let healthAndDefiSaverLine = `Health of Borrower: ${borrowerHealth}`;
   if (isManualSmartWalletTx) {
     const url = generateDefiSaverUrl(defiSaverUser, collateralName);
     healthAndDefiSaverLine = `Health of Borrower: ${borrowerHealth}
-Manually via${hyperlink(url, "defisaver.com")} 🛟`;
+Manually via${hyperlink(url, 'defisaver.com')} 🛟`;
   } else if (isDefiSaverAutomatedTx) {
     const url = generateDefiSaverUrl(defiSaverUser, collateralName);
     healthAndDefiSaverLine = `Health of Borrower: ${borrowerHealth}
-Automated via${hyperlink(url, "defisaver.com")} 🛟`;
+Automated via${hyperlink(url, 'defisaver.com')} 🛟`;
   }
 
   return `
-  🚀${hyperlink(buyerURL, shortenBuyer)} removed ${formatForPrint(collateral_decrease)}${hyperlink(COLLATERAL_URL, collateralName)}${dollarAddon}
+  🚀${hyperlink(buyerURL, shortenBuyer)} removed ${formatForPrint(collateral_decrease)}${hyperlink(
+    COLLATERAL_URL,
+    collateralName
+  )}${dollarAddon}
 ${healthAndDefiSaverLine}
 Borrow APY: ${formatForPrint(borrowRate)}%
 ${marketHealthPrint}
-Marketcap: ${getShortenNumber(formatForPrint(marketCap))}  | Total borrowed: ${getShortenNumber(formatForPrint(crvUSDinCirculation))} | Price: ${crvUSD_price.toFixed(4)}  
-Links:${hyperlink(TX_HASH_URL_arbiscan, "arbiscan.io")} |${hyperlink(TX_HASH_URL_EIGENPHI, "eigenphi.io")} 🦙🦙🦙
+Marketcap: ${getShortenNumber(formatForPrint(marketCap))}  | Total borrowed: ${getShortenNumber(
+    formatForPrint(crvUSDinCirculation)
+  )} | Price: ${crvUSD_price.toFixed(4)}  
+Links:${hyperlink(TX_HASH_URL_arbiscan, 'arbiscan.io')} |${hyperlink(TX_HASH_URL_EIGENPHI, 'eigenphi.io')} 🦙🦙🦙
 `;
 }
 
-export async function buildRepayMessage(formattedEventData: any, isDefiSaverAutomatedTx: boolean, isManualSmartWalletTx: boolean, defiSaverUser: string) {
+export async function buildRepayMessage(
+  formattedEventData: any,
+  isDefiSaverAutomatedTx: boolean,
+  isManualSmartWalletTx: boolean,
+  defiSaverUser: string
+) {
   let {
     crvUSD_price,
     borrowerHealth,
@@ -338,24 +372,24 @@ export async function buildRepayMessage(formattedEventData: any, isDefiSaverAuto
 
   crvUSDinCirculation = formatForPrint(crvUSDinCirculation);
 
-  let didWhat = `repayed ${formatForPrint(loan_decrease)}${hyperlink(crvUSD_URL, "crvUSD")}`;
+  let didWhat = `repayed ${formatForPrint(loan_decrease)}${hyperlink(crvUSD_URL, 'crvUSD')}`;
   if (collateral_decrease > 0 && loan_decrease > 1) {
     didWhat += ` and received ${formatForPrint(collateral_decrease)}${hyperlink(COLLATERAL_URL, collateralName)}`;
   }
 
   let marketHealthPrint = getMarketHealthPrint(qtyCollat, collateralName, collatValue, marketBorrowedAmount);
 
-  if (borrowerHealth !== "no loan") borrowerHealth = formatForPrint(borrowerHealth * 100);
+  if (borrowerHealth !== 'no loan') borrowerHealth = formatForPrint(borrowerHealth * 100);
 
   let healthAndDefiSaverLine = `Health of Borrower: ${borrowerHealth}`;
   if (isManualSmartWalletTx) {
     const url = generateDefiSaverUrl(defiSaverUser, collateralName);
     healthAndDefiSaverLine = `Health of Borrower: ${borrowerHealth}
-Manually via${hyperlink(url, "defisaver.com")} 🛟`;
+Manually via${hyperlink(url, 'defisaver.com')} 🛟`;
   } else if (isDefiSaverAutomatedTx) {
     const url = generateDefiSaverUrl(defiSaverUser, collateralName);
     healthAndDefiSaverLine = `Health of Borrower: ${borrowerHealth}
-Automated via${hyperlink(url, "defisaver.com")} 🛟`;
+Automated via${hyperlink(url, 'defisaver.com')} 🛟`;
   }
 
   return `
@@ -363,12 +397,19 @@ Automated via${hyperlink(url, "defisaver.com")} 🛟`;
 ${healthAndDefiSaverLine}
 Borrow APY: ${formatForPrint(borrowRate)}%
 ${marketHealthPrint}
-Marketcap: ${getShortenNumber(formatForPrint(marketCap))}  | Total borrowed: ${getShortenNumber(formatForPrint(crvUSDinCirculation))} | Price: ${crvUSD_price.toFixed(4)}  
-Links:${hyperlink(TX_HASH_URL_arbiscan, "arbiscan.io")} |${hyperlink(TX_HASH_URL_EIGENPHI, "eigenphi.io")} 🦙🦙🦙
+Marketcap: ${getShortenNumber(formatForPrint(marketCap))}  | Total borrowed: ${getShortenNumber(
+    formatForPrint(crvUSDinCirculation)
+  )} | Price: ${crvUSD_price.toFixed(4)}  
+Links:${hyperlink(TX_HASH_URL_arbiscan, 'arbiscan.io')} |${hyperlink(TX_HASH_URL_EIGENPHI, 'eigenphi.io')} 🦙🦙🦙
   `;
 }
 
-export async function buildBorrowMessage(formattedEventData: any, isDefiSaverAutomatedTx: boolean, isManualSmartWalletTx: boolean, defiSaverUser: string) {
+export async function buildBorrowMessage(
+  formattedEventData: any,
+  isDefiSaverAutomatedTx: boolean,
+  isManualSmartWalletTx: boolean,
+  defiSaverUser: string
+) {
   let {
     crvUSD_price,
     borrowerHealth,
@@ -399,29 +440,33 @@ export async function buildBorrowMessage(formattedEventData: any, isDefiSaverAut
 
   let didWhat;
   if (collateral_increase > 0 && loan_increase > 1) {
-    didWhat = `increased collat by ${formatForPrint(collateral_increase)}${hyperlink(COLLATERAL_URL, collateralName)}${dollarAddonCollat} and borrowed ${formatForPrint(
-      loan_increase
-    )}${hyperlink(crvUSD_URL, "crvUSD")}`;
+    didWhat = `increased collat by ${formatForPrint(collateral_increase)}${hyperlink(
+      COLLATERAL_URL,
+      collateralName
+    )}${dollarAddonCollat} and borrowed ${formatForPrint(loan_increase)}${hyperlink(crvUSD_URL, 'crvUSD')}`;
   } else if (collateral_increase > 0) {
-    didWhat = `increased collat by ${formatForPrint(collateral_increase)}${hyperlink(COLLATERAL_URL, collateralName)}${dollarAddonCollat}`;
+    didWhat = `increased collat by ${formatForPrint(collateral_increase)}${hyperlink(
+      COLLATERAL_URL,
+      collateralName
+    )}${dollarAddonCollat}`;
   } else if (loan_increase >= 0) {
     if (loan_increase < MIN_REPAYED_AMOUNT_WORTH_PRINTING) return "don't print tiny liquidations";
-    didWhat = `borrowed ${formatForPrint(loan_increase)}${hyperlink(crvUSD_URL, "crvUSD")}`;
+    didWhat = `borrowed ${formatForPrint(loan_increase)}${hyperlink(crvUSD_URL, 'crvUSD')}`;
   }
 
   let marketHealthPrint = getMarketHealthPrint(qtyCollat, collateralName, collatValue, marketBorrowedAmount);
 
-  if (borrowerHealth !== "no loan") borrowerHealth = formatForPrint(borrowerHealth * 100);
+  if (borrowerHealth !== 'no loan') borrowerHealth = formatForPrint(borrowerHealth * 100);
 
   let healthAndDefiSaverLine = `Health of Borrower: ${borrowerHealth}`;
   if (isManualSmartWalletTx) {
     const url = generateDefiSaverUrl(defiSaverUser, collateralName);
     healthAndDefiSaverLine = `Health of Borrower: ${borrowerHealth}
-Manually via${hyperlink(url, "defisaver.com")} 🛟`;
+Manually via${hyperlink(url, 'defisaver.com')} 🛟`;
   } else if (isDefiSaverAutomatedTx) {
     const url = generateDefiSaverUrl(defiSaverUser, collateralName);
     healthAndDefiSaverLine = `Health of Borrower: ${borrowerHealth}
-Automated via${hyperlink(url, "defisaver.com")} 🛟`;
+Automated via${hyperlink(url, 'defisaver.com')} 🛟`;
   }
 
   return `
@@ -429,8 +474,10 @@ Automated via${hyperlink(url, "defisaver.com")} 🛟`;
 ${healthAndDefiSaverLine}
 Borrow APY: ${formatForPrint(borrowRate)}%
 ${marketHealthPrint}
-Marketcap: ${getShortenNumber(formatForPrint(marketCap))}  | Total borrowed: ${getShortenNumber(formatForPrint(crvUSDinCirculation))} | Price: ${crvUSD_price.toFixed(4)}  
-Links:${hyperlink(TX_HASH_URL_arbiscan, "arbiscan.io")} |${hyperlink(TX_HASH_URL_EIGENPHI, "eigenphi.io")} 🦙🦙🦙
+Marketcap: ${getShortenNumber(formatForPrint(marketCap))}  | Total borrowed: ${getShortenNumber(
+    formatForPrint(crvUSDinCirculation)
+  )} | Price: ${crvUSD_price.toFixed(4)}  
+Links:${hyperlink(TX_HASH_URL_arbiscan, 'arbiscan.io')} |${hyperlink(TX_HASH_URL_EIGENPHI, 'eigenphi.io')} 🦙🦙🦙
   `;
 }
 
@@ -463,15 +510,17 @@ export async function buildDepositMessage(formattedEventData: any) {
 
   let marketHealthPrint = getMarketHealthPrint(qtyCollat, collateralName, collatValue, marketBorrowedAmount);
 
-  if (borrowerHealth !== "no loan") borrowerHealth = formatForPrint(borrowerHealth * 100);
+  if (borrowerHealth !== 'no loan') borrowerHealth = formatForPrint(borrowerHealth * 100);
 
   return `
   🚀${hyperlink(buyerURL, shortenBuyer)} deposited ${borrowedAmount}${hyperlink(COLLATERAL_URL, collateralName)}
 Health of Borrower: ${borrowerHealth}
 Borrow APY: ${formatForPrint(borrowRate)}%
 ${marketHealthPrint}
-Marketcap: ${getShortenNumber(formatForPrint(marketCap))}  | Total borrowed: ${getShortenNumber(formatForPrint(crvUSDinCirculation))} | Price: ${crvUSD_price.toFixed(4)}  
-Links:${hyperlink(TX_HASH_URL_arbiscan, "arbiscan.io")} |${hyperlink(TX_HASH_URL_EIGENPHI, "eigenphi.io")} 🦙🦙🦙
+Marketcap: ${getShortenNumber(formatForPrint(marketCap))}  | Total borrowed: ${getShortenNumber(
+    formatForPrint(crvUSDinCirculation)
+  )} | Price: ${crvUSD_price.toFixed(4)}  
+Links:${hyperlink(TX_HASH_URL_arbiscan, 'arbiscan.io')} |${hyperlink(TX_HASH_URL_EIGENPHI, 'eigenphi.io')} 🦙🦙🦙
 `;
 }
 
@@ -502,7 +551,7 @@ async function buildSwapRouterMessage(formattedEventData: any) {
   let tokenOutURL = getTokenURL(boughtAddress);
   let buyerURL = getBuyerURL(buyer);
 
-  const shortenBuyer = "Swap Router";
+  const shortenBuyer = 'Swap Router';
 
   soldAmount = formatForPrint(soldAmount);
   boughtAmount = formatForPrint(boughtAmount);
@@ -516,10 +565,16 @@ async function buildSwapRouterMessage(formattedEventData: any) {
   const TX_HASH_URL_EIGENPHI = getTxHashURLfromEigenPhi(txHash);
 
   let swappedWhat;
-  if (tokenSoldName === "crvUSD") {
-    swappedWhat = `traded ${boughtAmount}${hyperlink(tokenOutURL, tokenBoughtName)} for ${soldAmount}${hyperlink(tokenInURL, tokenSoldName)}${dollarAddon}`;
+  if (tokenSoldName === 'crvUSD') {
+    swappedWhat = `traded ${boughtAmount}${hyperlink(tokenOutURL, tokenBoughtName)} for ${soldAmount}${hyperlink(
+      tokenInURL,
+      tokenSoldName
+    )}${dollarAddon}`;
   } else if (tokenSoldName === collateralName) {
-    swappedWhat = `traded ${soldAmount}${hyperlink(tokenInURL, tokenSoldName)}${dollarAddon} for ${boughtAmount}${hyperlink(tokenOutURL, tokenBoughtName)}`;
+    swappedWhat = `traded ${soldAmount}${hyperlink(
+      tokenInURL,
+      tokenSoldName
+    )}${dollarAddon} for ${boughtAmount}${hyperlink(tokenOutURL, tokenBoughtName)}`;
   }
 
   let marketHealthPrint = getMarketHealthPrint(qtyCollat, collateralName, collatValue, marketBorrowedAmount);
@@ -529,8 +584,10 @@ async function buildSwapRouterMessage(formattedEventData: any) {
 1 ${collateralName} ➛ ${formatForPrint(collateral_price)} Dollar | ${formatForPrint(numberOfcrvUSDper1_collat)} crvUSD
 Borrow APY: ${formatForPrint(borrowRate)}%
 ${marketHealthPrint}
-Marketcap: ${getShortenNumber(formatForPrint(marketCap))}  | Total borrowed: ${getShortenNumber(formatForPrint(crvUSDinCirculation))} | Price: ${crvUSD_price.toFixed(4)}  
-Links:${hyperlink(TX_HASH_URL_arbiscan, "arbiscan.io")} |${hyperlink(TX_HASH_URL_EIGENPHI, "eigenphi.io")} 🦙🦙🦙
+Marketcap: ${getShortenNumber(formatForPrint(marketCap))}  | Total borrowed: ${getShortenNumber(
+    formatForPrint(crvUSDinCirculation)
+  )} | Price: ${crvUSD_price.toFixed(4)}  
+Links:${hyperlink(TX_HASH_URL_arbiscan, 'arbiscan.io')} |${hyperlink(TX_HASH_URL_EIGENPHI, 'eigenphi.io')} 🦙🦙🦙
 `;
 }
 
@@ -584,23 +641,29 @@ export async function buildTokenExchangeMessage(formattedEventData: any) {
   const TX_HASH_URL_EIGENPHI = getTxHashURLfromEigenPhi(txHash);
 
   let swappedWhat;
-  if (tokenSoldName === "crvUSD") {
-    swappedWhat = `soft-liquidated ${boughtAmount}${hyperlink(tokenOutURL, tokenBoughtName)} with ${soldAmount}${hyperlink(tokenInURL, tokenSoldName)}${dollarAddon}`;
+  if (tokenSoldName === 'crvUSD') {
+    swappedWhat = `soft-liquidated ${boughtAmount}${hyperlink(
+      tokenOutURL,
+      tokenBoughtName
+    )} with ${soldAmount}${hyperlink(tokenInURL, tokenSoldName)}${dollarAddon}`;
   } else if (tokenSoldName === collateralName) {
-    swappedWhat = `de-liquidated ${soldAmount}${hyperlink(tokenInURL, tokenSoldName)} with ${boughtAmount}${hyperlink(tokenOutURL, tokenBoughtName)}${dollarAddon}`;
+    swappedWhat = `de-liquidated ${soldAmount}${hyperlink(tokenInURL, tokenSoldName)} with ${boughtAmount}${hyperlink(
+      tokenOutURL,
+      tokenBoughtName
+    )}${dollarAddon}`;
   }
 
   let profitPrint = getProfitPrint(profit, revenue, cost);
-  if (shortenBuyer === "1Inch") {
+  if (shortenBuyer === '1Inch') {
     let _1Inchdetails = await getSwap1InchMinAmountInfo(txHash);
-    profitPrint = `Decoded 1Inch-Swap: Swap ${formatForPrint(_1Inchdetails.amountIn)} ${_1Inchdetails.tokenInName} to min. ${formatForPrint(_1Inchdetails.minReturnAmount)} ${
-      _1Inchdetails.tokenOutName
-    }`;
-  } else if (shortenBuyer === "1inch v5: Aggregation Router") {
+    profitPrint = `Decoded 1Inch-Swap: Swap ${formatForPrint(_1Inchdetails.amountIn)} ${
+      _1Inchdetails.tokenInName
+    } to min. ${formatForPrint(_1Inchdetails.minReturnAmount)} ${_1Inchdetails.tokenOutName}`;
+  } else if (shortenBuyer === '1inch v5: Aggregation Router') {
     let _1Inchdetails = await get1InchV5MinAmountInfo(txHash);
-    profitPrint = `Decoded 1Inch-Swap: Swap ${formatForPrint(_1Inchdetails.amountIn)} ${_1Inchdetails.tokenInName} to min. ${formatForPrint(_1Inchdetails.minReturnAmount)} ${
-      _1Inchdetails.tokenOutName
-    }`;
+    profitPrint = `Decoded 1Inch-Swap: Swap ${formatForPrint(_1Inchdetails.amountIn)} ${
+      _1Inchdetails.tokenInName
+    } to min. ${formatForPrint(_1Inchdetails.minReturnAmount)} ${_1Inchdetails.tokenOutName}`;
   }
   let marketHealthPrint = getMarketHealthPrint(qtyCollat, collateralName, collatValue, marketBorrowedAmount);
 
@@ -608,8 +671,10 @@ export async function buildTokenExchangeMessage(formattedEventData: any) {
   🚀${hyperlink(buyerURL, shortenBuyer)} ${swappedWhat}
 ${profitPrint}
 ${marketHealthPrint}
-Marketcap: ${getShortenNumber(formatForPrint(marketCap))}  | Total borrowed: ${getShortenNumber(formatForPrint(crvUSDinCirculation))} | Price: ${crvUSD_price.toFixed(4)}  
-Links:${hyperlink(TX_HASH_URL_arbiscan, "arbiscan.io")} |${hyperlink(TX_HASH_URL_EIGENPHI, "eigenphi.io")} 🦙🦙🦙
+Marketcap: ${getShortenNumber(formatForPrint(marketCap))}  | Total borrowed: ${getShortenNumber(
+    formatForPrint(crvUSDinCirculation)
+  )} | Price: ${crvUSD_price.toFixed(4)}  
+Links:${hyperlink(TX_HASH_URL_arbiscan, 'arbiscan.io')} |${hyperlink(TX_HASH_URL_EIGENPHI, 'eigenphi.io')} 🦙🦙🦙
 `;
 }
 
@@ -620,7 +685,7 @@ Links:${hyperlink(TX_HASH_URL_arbiscan, "arbiscan.io")} |${hyperlink(TX_HASH_URL
 ////////////////////////////////////////////////////////
 
 export type PegKeeperMessageContext = {
-  event: "Provide" | "Withdraw"; // Assuming these are the only two event types
+  event: 'Provide' | 'Withdraw'; // Assuming these are the only two event types
   amount: number; // Total amount bought or sold
   priceBefore: number; // Price of crvUSD before the event
   priceAfter: number; // Price of crvUSD after the event
@@ -633,34 +698,46 @@ type PegKeeperDetail = {
   debtAtPreviousBlock: number | null;
 };
 
-export function buildPegKeeperMessage(pegKeeperDetails: PegKeeperDetail[], context: PegKeeperMessageContext, txHash: string): string {
+export function buildPegKeeperMessage(
+  pegKeeperDetails: PegKeeperDetail[],
+  context: PegKeeperMessageContext,
+  txHash: string
+): string {
   let messageParts: string[] = [];
   let totalBefore = 0;
   let totalAfter = 0;
 
   const crvUSD_URL = getTokenURL(ADDRESS_crvUSD);
-  const crvUSD_Link = hyperlink(crvUSD_URL, "crvUSD");
+  const crvUSD_Link = hyperlink(crvUSD_URL, 'crvUSD');
 
   // Find the first peg keeper with a change in debt
   const significantPegKeeper = pegKeeperDetails.find(
-    (detail) => detail.debtAtBlock !== null && detail.debtAtPreviousBlock !== null && detail.debtAtBlock !== detail.debtAtPreviousBlock
+    (detail) =>
+      detail.debtAtBlock !== null &&
+      detail.debtAtPreviousBlock !== null &&
+      detail.debtAtBlock !== detail.debtAtPreviousBlock
   );
 
   // Generate a URL for the significant peg keeper, default to "#" if not found
-  const pegkeeperURL = significantPegKeeper ? getPoolURL(significantPegKeeper.address) : "#";
+  const pegkeeperURL = significantPegKeeper ? getPoolURL(significantPegKeeper.address) : '#';
   // Use the coin symbol of the significant peg keeper for the action line, default to "Pegkeeper/crvUSD" if not found
-  const actionLineCoinSymbol = significantPegKeeper?.coinSymbol ? `${significantPegKeeper.coinSymbol}/crvUSD` : "Pegkeeper/crvUSD";
+  const actionLineCoinSymbol = significantPegKeeper?.coinSymbol
+    ? `${significantPegKeeper.coinSymbol}/crvUSD`
+    : 'Pegkeeper/crvUSD';
 
   // Formatting the first line based on the event type
-  const action = context.event === "Provide" ? "buffered" : "released";
+  const action = context.event === 'Provide' ? 'buffered' : 'released';
   const formattedAmount = getShortenNumberFixed(context.amount);
 
   // Constructing the summary line with hyperlink
-  const summaryLine = `🛡 Pegkeeper${hyperlink(pegkeeperURL, actionLineCoinSymbol)} ${action} ${formattedAmount}${crvUSD_Link}\n`;
+  const summaryLine = `🛡 Pegkeeper${hyperlink(
+    pegkeeperURL,
+    actionLineCoinSymbol
+  )} ${action} ${formattedAmount}${crvUSD_Link}\n`;
 
   messageParts.push(summaryLine);
 
-  pegKeeperDetails.sort((a, b) => (a.coinSymbol || "").localeCompare(b.coinSymbol || ""));
+  pegKeeperDetails.sort((a, b) => (a.coinSymbol || '').localeCompare(b.coinSymbol || ''));
 
   for (const detail of pegKeeperDetails) {
     if (detail.coinSymbol && detail.debtAtBlock !== null && detail.debtAtPreviousBlock !== null) {
@@ -671,7 +748,9 @@ export function buildPegKeeperMessage(pegKeeperDetails: PegKeeperDetail[], conte
 
       // Generate URL for each peg keeper detail
       const detailURL = getPoolURL(detail.address);
-      let debtChangeMessage = `${hyperlink(detailURL, `${detail.coinSymbol}/crvUSD`)} ${getShortenNumberFixed(beforeDebt)}`;
+      let debtChangeMessage = `${hyperlink(detailURL, `${detail.coinSymbol}/crvUSD`)} ${getShortenNumberFixed(
+        beforeDebt
+      )}`;
       if (detail.debtAtPreviousBlock !== detail.debtAtBlock) {
         debtChangeMessage += ` ➠ ${getShortenNumberFixed(afterDebt)}`;
       }
@@ -680,17 +759,19 @@ export function buildPegKeeperMessage(pegKeeperDetails: PegKeeperDetail[], conte
     }
   }
 
-  const totalMessage = `\nTotal buffered: ${getShortenNumberFixed(totalBefore)} ➠ ${getShortenNumberFixed(totalAfter)}${crvUSD_Link}`;
+  const totalMessage = `\nTotal buffered: ${getShortenNumberFixed(totalBefore)} ➠ ${getShortenNumberFixed(
+    totalAfter
+  )}${crvUSD_Link}`;
   messageParts.push(totalMessage);
 
   const txHashURLfromarbiscan = getTxHashURLfromarbiscan(txHash);
-  const txHashLinkarbiscan = hyperlink(txHashURLfromarbiscan, "arbiscan.io");
+  const txHashLinkarbiscan = hyperlink(txHashURLfromarbiscan, 'arbiscan.io');
   const txHashURLfromEigenPhi = getTxHashURLfromEigenPhi(txHash);
-  const txHashLinkEigenphi = hyperlink(txHashURLfromEigenPhi, "eigenphi.io");
+  const txHashLinkEigenphi = hyperlink(txHashURLfromEigenPhi, 'eigenphi.io');
   const links = `Links:${txHashLinkarbiscan} |${txHashLinkEigenphi} 🦙🦙🦙`;
   messageParts.push(links);
 
-  return messageParts.join("\n");
+  return messageParts.join('\n');
 }
 
 ////////////////////////////////////////////////////////
@@ -737,15 +818,21 @@ export function buildLendingMarketDepositMessage(
 
   const dollarAddon = getDollarAddOn(dollarAmount);
 
-  const curveLendingLink = hyperlink(getCurveLendingURL(market.id), "lend.curve.fi");
-  const arbiscanLink = hyperlink(TX_HASH_URL_arbiscan, "arbiscan.io");
-  const eigenphiLink = hyperlink(TX_HASH_URL_EIGENPHI, "eigenphi.io");
+  const curveLendingLink = hyperlink(getCurveLendingURL(market.id), 'lend.curve.fi');
+  const arbiscanLink = hyperlink(TX_HASH_URL_arbiscan, 'arbiscan.io');
+  const eigenphiLink = hyperlink(TX_HASH_URL_EIGENPHI, 'eigenphi.io');
+
+  const utililizationRate = (totalDebtInMarket / totalAssets) * 100;
 
   return `
-🚀${hyperlink(agentURL, shortenAgent)} deposited ${formatForPrint(parsedDepositedBorrowTokenAmount)}${asset_Link}${dollarAddon}
+🚀${hyperlink(agentURL, shortenAgent)} deposited ${formatForPrint(
+    parsedDepositedBorrowTokenAmount
+  )}${asset_Link}${dollarAddon}
 Market:${hyperlink(vaultURL, market.market_name)}
 Lending APY: ${calculateAPYFromAPR(lendApr).toFixed(2)}% | Borrow APY: ${calculateAPYFromAPR(borrowApr).toFixed(2)}%
-Borrowed: ${getShortenNumberFixed(totalDebtInMarket)} out of ${getShortenNumberFixed(totalAssets)}${borrowedTokenLink}
+Borrowed: ${getShortenNumberFixed(totalDebtInMarket)} out of ${getShortenNumberFixed(
+    totalAssets
+  )}${borrowedTokenLink} (${utililizationRate.toFixed(2)}%)
 Links:${arbiscanLink} |${curveLendingLink} 🦙🦙🦙
 `;
 }
@@ -776,15 +863,21 @@ export function buildLendingMarketWithdrawMessage(
 
   const dollarAddon = getDollarAddOn(dollarAmount);
 
-  const curveLendingLink = hyperlink(getCurveLendingURL(market.id), "lend.curve.fi");
-  const arbiscanLink = hyperlink(TX_HASH_URL_arbiscan, "arbiscan.io");
-  const eigenphiLink = hyperlink(TX_HASH_URL_EIGENPHI, "eigenphi.io");
+  const curveLendingLink = hyperlink(getCurveLendingURL(market.id), 'lend.curve.fi');
+  const arbiscanLink = hyperlink(TX_HASH_URL_arbiscan, 'arbiscan.io');
+  const eigenphiLink = hyperlink(TX_HASH_URL_EIGENPHI, 'eigenphi.io');
+
+  const utililizationRate = (totalDebtInMarket / totalAssets) * 100;
 
   return `
-User${hyperlink(agentURL, shortenAgent)} removed ${formatForPrint(parsedWithdrawnBorrowTokenAmount)}${asset_Link}${dollarAddon}
+User${hyperlink(agentURL, shortenAgent)} removed ${formatForPrint(
+    parsedWithdrawnBorrowTokenAmount
+  )}${asset_Link}${dollarAddon}
 Market:${hyperlink(vaultURL, market.market_name)}
 Lending APY: ${calculateAPYFromAPR(lendApr).toFixed(2)}% | Borrow APY: ${calculateAPYFromAPR(borrowApr).toFixed(2)}%
-Borrowed: ${getShortenNumberFixed(totalDebtInMarket)} out of ${getShortenNumberFixed(totalAssets)}${borrowedTokenLink}
+Borrowed: ${getShortenNumberFixed(totalDebtInMarket)} out of ${getShortenNumberFixed(
+    totalAssets
+  )}${borrowedTokenLink} (${utililizationRate.toFixed(2)}%)
 Links:${arbiscanLink} |${curveLendingLink} 🦙🦙🦙
 `;
 }
@@ -821,29 +914,39 @@ export function buildLendingMarketBorrowMessage(
   const dollarAddon = getDollarAddOn(collatDollarAmount);
   const dollarAddonBorrow = getDollarAddOn(dollarAmountBorrow);
 
-  const curveLendingLink = hyperlink(getCurveLendingURL(market.id), "lend.curve.fi");
-  const arbiscanLink = hyperlink(TX_HASH_URL_arbiscan, "arbiscan.io");
-  const eigenphiLink = hyperlink(TX_HASH_URL_EIGENPHI, "eigenphi.io");
+  const curveLendingLink = hyperlink(getCurveLendingURL(market.id), 'lend.curve.fi');
+  const arbiscanLink = hyperlink(TX_HASH_URL_arbiscan, 'arbiscan.io');
+  const eigenphiLink = hyperlink(TX_HASH_URL_EIGENPHI, 'eigenphi.io');
 
   let userLine;
   if (collatDollarAmount < 1) {
-    userLine = `🚀${hyperlink(agentURL, shortenAgent)} borrowed ${formatForPrint(parsedBorrowedAmount)}${borrowedTokenLink}${dollarAddonBorrow}`;
+    userLine = `🚀${hyperlink(agentURL, shortenAgent)} borrowed ${formatForPrint(
+      parsedBorrowedAmount
+    )}${borrowedTokenLink}${dollarAddonBorrow}`;
   } else if (dollarAmountBorrow < 1) {
-    userLine = `🚀${hyperlink(agentURL, shortenAgent)} deposited ${formatForPrint(parsedCollatAmount)}${collat_Link}${dollarAddon}`;
+    userLine = `🚀${hyperlink(agentURL, shortenAgent)} deposited ${formatForPrint(
+      parsedCollatAmount
+    )}${collat_Link}${dollarAddon}`;
   } else {
-    userLine = `🚀${hyperlink(agentURL, shortenAgent)} deposited ${formatForPrint(parsedCollatAmount)}${collat_Link}${dollarAddon} and borrowed ${formatForPrint(
+    userLine = `🚀${hyperlink(agentURL, shortenAgent)} deposited ${formatForPrint(
+      parsedCollatAmount
+    )}${collat_Link}${dollarAddon} and borrowed ${formatForPrint(
       parsedBorrowedAmount
     )}${borrowedTokenLink}${dollarAddonBorrow}`;
   }
 
   const positionHealthLine = getLlamaLendPositionHealthLine(positionHealth);
 
+  const utililizationRate = (totalDebtInMarket / totalAssets) * 100;
+
   return `
 ${userLine}
 Market:${hyperlink(vaultURL, market.market_name)}
 ${positionHealthLine}
 Lending APY: ${calculateAPYFromAPR(lendApr).toFixed(2)}% | Borrow APY: ${calculateAPYFromAPR(borrowApr).toFixed(2)}%
-Borrowed: ${getShortenNumberFixed(totalDebtInMarket)} out of ${getShortenNumberFixed(totalAssets)}${borrowedTokenLink}
+Borrowed: ${getShortenNumberFixed(totalDebtInMarket)} out of ${getShortenNumberFixed(
+    totalAssets
+  )}${borrowedTokenLink} (${utililizationRate.toFixed(2)}%)
 Links:${arbiscanLink} |${curveLendingLink} 🦙🦙🦙
 `;
 }
@@ -883,23 +986,31 @@ export function buildLendingMarketRepayMessage(
   if (parsedCollatAmount > 1) {
     userLine = `User${hyperlink(agentURL, shortenAgent)} returned ${Number(
       parsedRepayAmount.toFixed(0)
-    ).toLocaleString()}${borrowedTokenLink}${repayDollarAddon} and received ${Number(parsedCollatAmount.toFixed(0)).toLocaleString()}${collat_Link}${collatDollarAddon}`;
+    ).toLocaleString()}${borrowedTokenLink}${repayDollarAddon} and received ${Number(
+      parsedCollatAmount.toFixed(0)
+    ).toLocaleString()}${collat_Link}${collatDollarAddon}`;
   } else {
-    userLine = `User${hyperlink(agentURL, shortenAgent)} returned ${Number(parsedRepayAmount.toFixed(0)).toLocaleString()}${borrowedTokenLink}${repayDollarAddon}`;
+    userLine = `User${hyperlink(agentURL, shortenAgent)} returned ${Number(
+      parsedRepayAmount.toFixed(0)
+    ).toLocaleString()}${borrowedTokenLink}${repayDollarAddon}`;
   }
 
   const positionHealthLine = getLlamaLendPositionHealthLine(positionHealth);
 
-  const curveLendingLink = hyperlink(getCurveLendingURL(market.id), "lend.curve.fi");
-  const arbiscanLink = hyperlink(TX_HASH_URL_arbiscan, "arbiscan.io");
-  const eigenphiLink = hyperlink(TX_HASH_URL_EIGENPHI, "eigenphi.io");
+  const curveLendingLink = hyperlink(getCurveLendingURL(market.id), 'lend.curve.fi');
+  const arbiscanLink = hyperlink(TX_HASH_URL_arbiscan, 'arbiscan.io');
+  const eigenphiLink = hyperlink(TX_HASH_URL_EIGENPHI, 'eigenphi.io');
+
+  const utililizationRate = (totalDebtInMarket / totalAssets) * 100;
 
   return `
 ${userLine}
 Market:${hyperlink(vaultURL, market.market_name)}
 ${positionHealthLine}
 Lending APY: ${calculateAPYFromAPR(lendApr).toFixed(2)}% | Borrow APY: ${calculateAPYFromAPR(borrowApr).toFixed(2)}%
-Borrowed: ${getShortenNumberFixed(totalDebtInMarket)} out of ${getShortenNumberFixed(totalAssets)}${borrowedTokenLink}
+Borrowed: ${getShortenNumberFixed(totalDebtInMarket)} out of ${getShortenNumberFixed(
+    totalAssets
+  )}${borrowedTokenLink} (${utililizationRate.toFixed(2)}%)
 Links:${arbiscanLink} |${curveLendingLink} 🦙🦙🦙
 `;
 }
@@ -934,16 +1045,20 @@ export function buildLendingMarketRemoveCollateralMessage(
   const borrowedTokenURL = getTokenURL(market.borrowed_token);
   const borrowedTokenLink = hyperlink(borrowedTokenURL, market.borrowed_token_symbol);
 
-  const curveLendingLink = hyperlink(getCurveLendingURL(market.id), "lend.curve.fi");
-  const arbiscanLink = hyperlink(TX_HASH_URL_arbiscan, "arbiscan.io");
-  const eigenphiLink = hyperlink(TX_HASH_URL_EIGENPHI, "eigenphi.io");
+  const curveLendingLink = hyperlink(getCurveLendingURL(market.id), 'lend.curve.fi');
+  const arbiscanLink = hyperlink(TX_HASH_URL_arbiscan, 'arbiscan.io');
+  const eigenphiLink = hyperlink(TX_HASH_URL_EIGENPHI, 'eigenphi.io');
+
+  const utililizationRate = (totalDebtInMarket / totalAssets) * 100;
 
   return `
 User${hyperlink(agentURL, shortenAgent)} removed ${formatForPrint(parsedCollatAmount)}${collat_Link}${collatDollarAddOn}
 ${positionHealthLine}
 Market:${hyperlink(vaultURL, market.market_name)}
 Lending APY: ${calculateAPYFromAPR(lendApr).toFixed(2)}% | Borrow APY: ${calculateAPYFromAPR(borrowApr).toFixed(2)}%
-Borrowed: ${getShortenNumberFixed(totalDebtInMarket)} out of ${getShortenNumberFixed(totalAssets)}${borrowedTokenLink}
+Borrowed: ${getShortenNumberFixed(totalDebtInMarket)} out of ${getShortenNumberFixed(
+    totalAssets
+  )}${borrowedTokenLink} (${utililizationRate.toFixed(2)}%)
 Links:${arbiscanLink} |${curveLendingLink} 🦙🦙🦙
 `;
 }
@@ -971,20 +1086,26 @@ export function buildLendingMarketSelfLiquidateMessage(
 
   const liquidatorURL = getBuyerURL(liquidatorAddress);
 
-  const curveLendingLink = hyperlink(getCurveLendingURL(market.id), "lend.curve.fi");
-  const arbiscanLink = hyperlink(TX_HASH_URL_arbiscan, "arbiscan.io");
-  const eigenphiLink = hyperlink(TX_HASH_URL_EIGENPHI, "eigenphi.io");
+  const curveLendingLink = hyperlink(getCurveLendingURL(market.id), 'lend.curve.fi');
+  const arbiscanLink = hyperlink(TX_HASH_URL_arbiscan, 'arbiscan.io');
+  const eigenphiLink = hyperlink(TX_HASH_URL_EIGENPHI, 'eigenphi.io');
 
   const collat_URL = getTokenURL(market.collateral_token);
   const collat_Link = hyperlink(collat_URL, market.collateral_token_symbol);
 
+  const utililizationRate = (totalDebtInMarket / totalAssets) * 100;
+
   return `
-User${hyperlink(liquidatorURL, shortenAddress(liquidatorAddress))} self-liquidated ${formatForPrint(parsedCollatAmount)}${collat_Link} ($${Number(
-    collarDollarValue.toFixed(0)
-  ).toLocaleString()}) with ${formatForPrint(parsedBorrowTokenAmountSentByBotFromReceiptForHardLiquidation)}${borrowedTokenLink} ($${formatForPrint(borrowTokenDollarAmount)})
+User${hyperlink(liquidatorURL, shortenAddress(liquidatorAddress))} self-liquidated ${formatForPrint(
+    parsedCollatAmount
+  )}${collat_Link} ($${Number(collarDollarValue.toFixed(0)).toLocaleString()}) with ${formatForPrint(
+    parsedBorrowTokenAmountSentByBotFromReceiptForHardLiquidation
+  )}${borrowedTokenLink} ($${formatForPrint(borrowTokenDollarAmount)})
 Market:${hyperlink(vaultURL, market.market_name)}
 Lending APY: ${calculateAPYFromAPR(lendApr).toFixed(2)}% | Borrow APY: ${calculateAPYFromAPR(borrowApr).toFixed(2)}%
-Borrowed: ${getShortenNumberFixed(totalDebtInMarket)} out of ${getShortenNumberFixed(totalAssets)}${borrowedTokenLink}
+Borrowed: ${getShortenNumberFixed(totalDebtInMarket)} out of ${getShortenNumberFixed(
+    totalAssets
+  )}${borrowedTokenLink} (${utililizationRate.toFixed(2)}%)
 Links:${arbiscanLink} |${curveLendingLink} 🦙🦙🦙
 `;
 }
@@ -1014,24 +1135,45 @@ export function buildLendingMarketHardLiquidateMessage(
   const liquidatorURL = getBuyerURL(liquidatorAddress);
   const poorFellaURL = getBuyerURL(poorFellaAddress);
 
-  const curveLendingLink = hyperlink(getCurveLendingURL(market.id), "lend.curve.fi");
-  const arbiscanLink = hyperlink(TX_HASH_URL_arbiscan, "arbiscan.io");
-  const eigenphiLink = hyperlink(TX_HASH_URL_EIGENPHI, "eigenphi.io");
+  const curveLendingLink = hyperlink(getCurveLendingURL(market.id), 'lend.curve.fi');
+  const arbiscanLink = hyperlink(TX_HASH_URL_arbiscan, 'arbiscan.io');
+  const eigenphiLink = hyperlink(TX_HASH_URL_EIGENPHI, 'eigenphi.io');
 
   const discountAmount = Math.abs(collarDollarValue - borrowTokenDollarAmount);
 
   const collat_URL = getTokenURL(market.collateral_token);
   const collat_Link = hyperlink(collat_URL, market.collateral_token_symbol);
 
-  return `
-⚰️${hyperlink(liquidatorURL, shortenAddress(liquidatorAddress))} hard-liquidated ${formatForPrint(parsedCollatAmount)}${collat_Link} ($${Number(
-    collarDollarValue.toFixed(0)
-  ).toLocaleString()}) with ${formatForPrint(parsedBorrowTokenAmountSentByBotFromReceiptForHardLiquidation)}${borrowedTokenLink} ($${formatForPrint(borrowTokenDollarAmount)})
+  const utililizationRate = (totalDebtInMarket / totalAssets) * 100;
+
+  let messageVariant;
+  if (parsedCollatAmount !== 0) {
+    messageVariant = `User${hyperlink(
+      liquidatorURL,
+      shortenAddress(liquidatorAddress)
+    )} hard-liquidated ${formatForPrint(parsedCollatAmount)}${collat_Link} ($${Number(
+      collarDollarValue.toFixed(0)
+    ).toLocaleString()}) with ${formatForPrint(
+      parsedBorrowTokenAmountSentByBotFromReceiptForHardLiquidation
+    )}${borrowedTokenLink} ($${formatForPrint(borrowTokenDollarAmount)})
 Market:${hyperlink(vaultURL, market.market_name)}
-Discount: $${formatForPrint(discountAmount)}
+Discount: $${formatForPrint(discountAmount)}`;
+  } else {
+    messageVariant = `User${hyperlink(
+      liquidatorURL,
+      shortenAddress(liquidatorAddress)
+    )} hard-liquidated ${formatForPrint(
+      parsedBorrowTokenAmountSentByBotFromReceiptForHardLiquidation
+    )}${borrowedTokenLink} ($${formatForPrint(borrowTokenDollarAmount)})
+Market:${hyperlink(vaultURL, market.market_name)}`;
+  }
+  return `
+${messageVariant}
 Affected User:${hyperlink(poorFellaURL, shortenAddress(poorFellaAddress))}
 Lending APY: ${calculateAPYFromAPR(lendApr).toFixed(2)}% | Borrow APY: ${calculateAPYFromAPR(borrowApr).toFixed(2)}%
-Borrowed: ${getShortenNumberFixed(totalDebtInMarket)} out of ${getShortenNumberFixed(totalAssets)}${borrowedTokenLink}
+Borrowed: ${getShortenNumberFixed(totalDebtInMarket)} out of ${getShortenNumberFixed(
+    totalAssets
+  )}${borrowedTokenLink} (${utililizationRate.toFixed(2)}%)
 Links:${arbiscanLink} |${curveLendingLink} 🦙🦙🦙
 `;
 }
@@ -1064,25 +1206,31 @@ export function buildSoftLiquidateMessage(
   const borrowedTokenURL = getTokenURL(market.borrowed_token);
   const borrowedTokenLink = hyperlink(borrowedTokenURL, market.borrowed_token_symbol);
 
-  const curveLendingLink = hyperlink(getCurveLendingURL(market.id), "lend.curve.fi");
-  const arbiscanLink = hyperlink(TX_HASH_URL_arbiscan, "arbiscan.io");
-  const eigenphiLink = hyperlink(TX_HASH_URL_EIGENPHI, "eigenphi.io");
+  const curveLendingLink = hyperlink(getCurveLendingURL(market.id), 'lend.curve.fi');
+  const arbiscanLink = hyperlink(TX_HASH_URL_arbiscan, 'arbiscan.io');
+  const eigenphiLink = hyperlink(TX_HASH_URL_EIGENPHI, 'eigenphi.io');
 
   let direction;
   if (collatDollarAmount > repaidBorrrowTokenDollarAmount) {
-    direction = "soft";
+    direction = 'soft';
   } else {
-    direction = "de";
+    direction = 'de';
   }
 
+  const utililizationRate = (totalDebtInMarket / totalAssets) * 100;
+
   return `
-User${hyperlink(agentURL, shortenAgent)} ${direction}-liquidated ${formatForPrint(parsedSoftLiquidatedAmount)}${collat_Link} ($${Number(
-    collatDollarAmount.toFixed(2)
-  ).toLocaleString()}) with ${formatForPrint(parsedRepaidAmount)}${borrowedTokenLink} ($${Number(repaidBorrrowTokenDollarAmount.toFixed(2)).toLocaleString()})
+User${hyperlink(agentURL, shortenAgent)} ${direction}-liquidated ${formatForPrint(
+    parsedSoftLiquidatedAmount
+  )}${collat_Link} ($${Number(collatDollarAmount.toFixed(2)).toLocaleString()}) with ${formatForPrint(
+    parsedRepaidAmount
+  )}${borrowedTokenLink} ($${Number(repaidBorrrowTokenDollarAmount.toFixed(2)).toLocaleString()})
 Market:${hyperlink(vaultURL, market.market_name)}
 Discount: $${formatForPrint(discountAmount)}
 Lending APY: ${calculateAPYFromAPR(lendApr).toFixed(2)}% | Borrow APY: ${calculateAPYFromAPR(borrowApr).toFixed(2)}%
-Borrowed: ${getShortenNumberFixed(totalDebtInMarket)} out of ${getShortenNumberFixed(totalAssets)}${borrowedTokenLink}
+Borrowed: ${getShortenNumberFixed(totalDebtInMarket)} out of ${getShortenNumberFixed(
+    totalAssets
+  )}${borrowedTokenLink} (${utililizationRate.toFixed(2)}%)
 Links:${arbiscanLink} |${curveLendingLink} 🦙🦙🦙
 `;
 }
@@ -1096,39 +1244,39 @@ Links:${arbiscanLink} |${curveLendingLink} 🦙🦙🦙
 async function getLastSeenValues() {
   try {
     const __dirname = path.dirname(fileURLToPath(import.meta.url));
-    const filePath = path.join(__dirname, "../../../lastSeen.json");
-    const data = JSON.parse(await readFile(filePath, "utf-8"));
+    const filePath = path.join(__dirname, '../../../lastSeen.json');
+    const data = JSON.parse(await readFile(filePath, 'utf-8'));
 
     return {
       txHash: data.txHash,
       txTimestamp: new Date(data.txTimestamp),
     };
   } catch (error) {
-    console.error("Error reading last seen data from file:", error);
+    console.error('Error reading last seen data from file:', error);
     return null;
   }
 }
 
 function getTimeMessage(timestamp: Date): string {
-  if (!timestamp) return "never seen"; // If no transaction was seen
+  if (!timestamp) return 'never seen'; // If no transaction was seen
 
   const differenceInSeconds = (new Date().getTime() - timestamp.getTime()) / 1000;
 
   if (differenceInSeconds < 60) {
     const seconds = Math.floor(differenceInSeconds);
-    return `${seconds} ${seconds === 1 ? "second" : "seconds"} ago`;
+    return `${seconds} ${seconds === 1 ? 'second' : 'seconds'} ago`;
   }
   if (differenceInSeconds < 3600) {
     const minutes = Math.floor(differenceInSeconds / 60);
-    return `${minutes} ${minutes === 1 ? "minute" : "minutes"} ago`;
+    return `${minutes} ${minutes === 1 ? 'minute' : 'minutes'} ago`;
   }
   const hours = Math.floor(differenceInSeconds / 3600);
-  return `${hours} ${hours === 1 ? "hour" : "hours"} ago`;
+  return `${hours} ${hours === 1 ? 'hour' : 'hours'} ago`;
 }
 
 function getLastSeenMessage(txHash: string, timestamp: Date) {
   const timeMessage = getTimeMessage(timestamp);
-  const message = `The last seen crvUSD${hyperlink(getTxHashURLfromarbiscan(txHash), "tx")} was ${timeMessage}`;
+  const message = `The last seen crvUSD${hyperlink(getTxHashURLfromarbiscan(txHash), 'tx')} was ${timeMessage}`;
   return message;
 }
 
@@ -1138,7 +1286,7 @@ async function getLastSeenMessageContent(): Promise<string> {
   const lastSeenValues = await getLastSeenValues();
 
   if (!lastSeenValues || !lastSeenValues.txHash) {
-    return "¯⧵_(ツ)_/¯ ";
+    return '¯⧵_(ツ)_/¯ ';
   }
 
   return getLastSeenMessage(lastSeenValues.txHash, lastSeenValues.txTimestamp);
@@ -1153,7 +1301,7 @@ async function botMonitoringIntervalPrint(bot: any) {
 
   const sendBotMessage = async () => {
     const message = await getLastSeenMessageContent();
-    bot.sendMessage(groupID, message, { parse_mode: "HTML", disable_web_page_preview: "true" });
+    bot.sendMessage(groupID, message, { parse_mode: 'HTML', disable_web_page_preview: 'true' });
   };
 
   const currentMinute = new Date().getMinutes();
@@ -1168,11 +1316,11 @@ async function botMonitoringIntervalPrint(bot: any) {
 
 export async function processLastSeen(eventEmitter: EventEmitter) {
   const message = await getLastSeenMessageContent();
-  eventEmitter.emit("newMessage", message);
+  eventEmitter.emit('newMessage', message);
 }
 
 export async function telegramBotMain(env: string, eventEmitter: EventEmitter) {
-  eventEmitter.on("newMessage", (message: string) => {
+  eventEmitter.on('newMessage', (message: string) => {
     if (groupID) {
       send(bot, message, parseInt(groupID));
     }
@@ -1181,11 +1329,11 @@ export async function telegramBotMain(env: string, eventEmitter: EventEmitter) {
   let telegramGroupToken: string | undefined;
   let groupID: string | undefined;
 
-  if (env == "prod") {
+  if (env == 'prod') {
     telegramGroupToken = process.env.TELEGRAM_CRVUSD_PROD_KEY!;
     groupID = process.env.TELEGRAM_PROD_GROUP_ID!;
   }
-  if (env == "test") {
+  if (env == 'test') {
     telegramGroupToken = process.env.TELEGRAM_CRVUSD_TEST_KEY!;
     groupID = process.env.TELEGRAM_TEST_GROUP_ID!;
   }
