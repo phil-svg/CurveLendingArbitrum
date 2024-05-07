@@ -240,7 +240,7 @@ async function liveMode(allLendingMarkets, eventEmitter) {
         subscribeToLendingMarketsEvents(market, vaultContract, controllerContact, ammContract, eventEmitter, 'Amm');
     }
     eventEmitter.on('newLendingMarketsEvent', async ({ market, event, type, vaultContract, controllerContact, ammContract }) => {
-        console.log('\n\n\n\nnew event in Market:', market.vault, ':', event, 'type:', type);
+        console.log('\nnew event in Market:', market.vault, ':', event, 'type:', type);
         if (type === 'Vault') {
             await processLlamalendVaultEvent(market, vaultContract, controllerContact, ammContract, event, eventEmitter);
         }
