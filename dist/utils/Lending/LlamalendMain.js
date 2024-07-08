@@ -1,4 +1,4 @@
-import { LENDING_MIN_HARDLIQ_AMOUNT_WORTH_PRINTING, LENDING_MIN_LIQUIDATION_DISCOUNT_WORTH_PRINTING, LENDING_MIN_LOAN_CHANGE_AMOUNT_WORTH_PRINTING, } from '../../LendingArbitrumBot.js';
+import { LENDING_MIN_LIQUIDATION_DISCOUNT_WORTH_PRINTING, LENDING_MIN_LOAN_CHANGE_AMOUNT_WORTH_PRINTING, } from '../../LendingArbitrumBot.js';
 import { getBorrowApr, getCollatDollarValue, getLendApr, getPositionHealth, getTotalAssets, getTotalDebtInMarket, } from '../helperFunctions/Lending.js';
 import { web3HttpProvider, webWsProvider } from '../helperFunctions/Web3.js';
 import { getPriceOf_crvUSD } from '../priceAPI/priceAPI.js';
@@ -112,7 +112,8 @@ async function processLlamalendControllerEvent(market, llamalendVaultContract, c
         const poorFellaAddress = event.returnValues.user;
         const parsedCollatAmount = event.returnValues.collateral_received / 10 ** market.collateral_token_decimals;
         const collarDollarValue = parsedCollatAmount * collatTokenDollarPricePerUnit;
-        if (collarDollarValue < LENDING_MIN_HARDLIQ_AMOUNT_WORTH_PRINTING)
+        const discountAmount = Math.abs(collarDollarValue - borrowTokenDollarAmount);
+        if (discountAmount < LENDING_MIN_LIQUIDATION_DISCOUNT_WORTH_PRINTING)
             return;
         if (poorFellaAddress.toLowerCase() === liquidatorAddress.toLowerCase()) {
             const message = buildLendingMarketSelfLiquidateMessage(market, parsedBorrowTokenAmountSentByBotFromReceiptForHardLiquidation, borrowTokenDollarAmount, parsedCollatAmount, collarDollarValue, txHash, totalDebtInMarket, borrowApr, lendApr, totalAssets, liquidatorAddress);

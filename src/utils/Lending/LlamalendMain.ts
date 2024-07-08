@@ -220,7 +220,8 @@ async function processLlamalendControllerEvent(
     const poorFellaAddress = event.returnValues.user;
     const parsedCollatAmount = event.returnValues.collateral_received / 10 ** market.collateral_token_decimals;
     const collarDollarValue = parsedCollatAmount * collatTokenDollarPricePerUnit;
-    if (collarDollarValue < LENDING_MIN_HARDLIQ_AMOUNT_WORTH_PRINTING) return;
+    const discountAmount = Math.abs(collarDollarValue - borrowTokenDollarAmount);
+    if (discountAmount < LENDING_MIN_LIQUIDATION_DISCOUNT_WORTH_PRINTING) return;
 
     if (poorFellaAddress.toLowerCase() === liquidatorAddress.toLowerCase()) {
       const message = buildLendingMarketSelfLiquidateMessage(
