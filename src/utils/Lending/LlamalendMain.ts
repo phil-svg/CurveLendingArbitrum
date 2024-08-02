@@ -253,7 +253,7 @@ async function processLlamalendControllerEvent(
         liquidatorAddress,
         poorFellaAddress
       );
-      eventEmitter.emit('newMessage', message);
+      if (message != `don't print tiny hard-liquidations`) eventEmitter.emit('newMessage', message);
     }
   }
 }
@@ -353,7 +353,7 @@ async function histoMode(allLendingMarkets: EnrichedLendingMarketEvent[], eventE
   // const START_BLOCK = LENDING_LAUNCH_BLOCK;
   // const END_BLOCK = PRESENT;
 
-  const START_BLOCK = 200965702;
+  const START_BLOCK = 238513569;
   const END_BLOCK = START_BLOCK;
 
   console.log('start');

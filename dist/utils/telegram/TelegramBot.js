@@ -2,7 +2,7 @@ import TelegramBot from 'node-telegram-bot-api';
 import dotenv from 'dotenv';
 import { labels } from '../../Labels.js';
 import { get1InchV5MinAmountInfo, getSwap1InchMinAmountInfo } from '../helperFunctions/1Inch.js';
-import { MIN_HARDLIQ_AMOUNT_WORTH_PRINTING, MIN_LIQUIDATION_AMOUNT_WORTH_PRINTING, MIN_REPAYED_AMOUNT_WORTH_PRINTING, } from '../../LendingArbitrumBot.js';
+import { LENDING_MIN_HARDLIQ_AMOUNT_WORTH_PRINTING, MIN_HARDLIQ_AMOUNT_WORTH_PRINTING, MIN_LIQUIDATION_AMOUNT_WORTH_PRINTING, MIN_REPAYED_AMOUNT_WORTH_PRINTING, } from '../../LendingArbitrumBot.js';
 import { ADDRESS_crvUSD, SWAP_ROUTER } from '../Constants.js';
 import { readFile } from 'fs/promises';
 import path from 'path';
@@ -659,6 +659,9 @@ export function buildLendingMarketHardLiquidateMessage(market, parsedBorrowToken
     const arbiscanLink = hyperlink(TX_HASH_URL_arbiscan, 'arbiscan.io');
     const eigenphiLink = hyperlink(TX_HASH_URL_EIGENPHI, 'eigenphi.io');
     const discountAmount = Math.abs(collarDollarValue - borrowTokenDollarAmount);
+    if (discountAmount <= LENDING_MIN_HARDLIQ_AMOUNT_WORTH_PRINTING) {
+        return `don't print tiny hard-liquidations`;
+    }
     const collat_URL = getTokenURL(market.collateral_token);
     const collat_Link = hyperlink(collat_URL, market.collateral_token_symbol);
     const utililizationRate = (totalDebtInMarket / totalAssets) * 100;
