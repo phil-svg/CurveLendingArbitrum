@@ -17,7 +17,7 @@ import {
   getTotalAssets,
   getTotalDebtInMarket,
 } from '../helperFunctions/Lending.js';
-import { web3HttpProvider, webWsProvider } from '../helperFunctions/Web3.js';
+import { web3HttpProvider, web3WsProvider } from '../../web3/Web3Basics.js';
 import { getPriceOf_crvUSD } from '../priceAPI/priceAPI.js';
 import {
   buildLendingMarketBorrowMessage,
@@ -30,12 +30,11 @@ import {
   buildSoftLiquidateMessage,
 } from '../telegram/TelegramBot.js';
 import {
-  checkWsConnectionViaNewBlocks,
   getCurrentBlockNumber,
   getPastEvents,
   getTxReceiptClassic,
   subscribeToLendingMarketsEvents,
-} from '../web3Calls/generic.js';
+} from '../../web3/generic.js';
 import { ABI_LLAMALEND_AMM, ABI_LLAMALEND_CONTROLLER, ABI_LLAMALEND_FACTORY, ABI_LLAMALEND_VAULT } from './Abis.js';
 import {
   enrichMarketData,
@@ -268,7 +267,8 @@ async function processLlamalendAmmEvent(
 ) {
   if (event.event === 'TokenExchange') {
     console.log('Soft Liquidation spotted');
-    console.log('\n\n new Event in LLAMMA_CRVUSD_AMM:', event);
+
+    await new Promise((resolve) => setTimeout(resolve, 60000)); // 1 sec delay before quering to give rpc provider time to index. (test)
 
     const isLongPosition = market.market_name.endsWith('Long');
     let crvUSDPrice = await getPriceOf_crvUSD(event.blockNumber);
@@ -409,18 +409,55 @@ async function histoMode(allLendingMarkets: EnrichedLendingMarketEvent[], eventE
 }
 
 async function liveMode(allLendingMarkets: EnrichedLendingMarketEvent[], eventEmitter: any) {
-  await checkWsConnectionViaNewBlocks();
-
   for (const market of allLendingMarkets) {
     console.log('\nmarket', market);
 
-    const vaultContract = new webWsProvider.eth.Contract(ABI_LLAMALEND_VAULT, market.vault);
-    const controllerContact = new webWsProvider.eth.Contract(ABI_LLAMALEND_CONTROLLER, market.controller);
-    const ammContract = new webWsProvider.eth.Contract(ABI_LLAMALEND_AMM, market.amm);
+    const vaultContract = new web3HttpProvider.eth.Contract(ABI_LLAMALEND_VAULT, market.vault);
+    const controllerContact = new web3HttpProvider.eth.Contract(ABI_LLAMALEND_CONTROLLER, market.controller);
+    const ammContract = new web3HttpProvider.eth.Contract(ABI_LLAMALEND_AMM, market.amm);
 
-    subscribeToLendingMarketsEvents(market, vaultContract, controllerContact, ammContract, eventEmitter, 'Vault');
-    subscribeToLendingMarketsEvents(market, vaultContract, controllerContact, ammContract, eventEmitter, 'Controller');
-    subscribeToLendingMarketsEvents(market, vaultContract, controllerContact, ammContract, eventEmitter, 'Amm');
+    subscribeToLendingMarketsEvents(
+      market,
+      vaultContract,
+      market.vault,
+      ABI_LLAMALEND_VAULT,
+      controllerContact,
+      market.controller,
+      ABI_LLAMALEND_CONTROLLER,
+      ammContract,
+      market.amm,
+      ABI_LLAMALEND_AMM,
+      eventEmitter,
+      'Vault'
+    );
+    subscribeToLendingMarketsEvents(
+      market,
+      vaultContract,
+      market.vault,
+      ABI_LLAMALEND_VAULT,
+      controllerContact,
+      market.controller,
+      ABI_LLAMALEND_CONTROLLER,
+      ammContract,
+      market.amm,
+      ABI_LLAMALEND_AMM,
+      eventEmitter,
+      'Controller'
+    );
+    subscribeToLendingMarketsEvents(
+      market,
+      vaultContract,
+      market.vault,
+      ABI_LLAMALEND_VAULT,
+      controllerContact,
+      market.controller,
+      ABI_LLAMALEND_CONTROLLER,
+      ammContract,
+      market.amm,
+      ABI_LLAMALEND_AMM,
+      eventEmitter,
+      'Amm'
+    );
   }
 
   eventEmitter.on(

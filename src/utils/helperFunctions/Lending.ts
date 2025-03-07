@@ -1,5 +1,5 @@
 import { EnrichedLendingMarketEvent } from '../Interfaces.js';
-import { web3Call } from '../web3Calls/generic.js';
+import { web3Call } from '../../web3/generic.js';
 
 export async function getBorrowApr(vaultContract: any, blockNumber: number) {
   const res = await web3Call(vaultContract, 'borrow_apr', [], blockNumber);

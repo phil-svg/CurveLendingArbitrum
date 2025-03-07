@@ -1,7 +1,7 @@
-import { web3HttpProvider } from '../helperFunctions/Web3.js';
+import { web3HttpProvider } from '../../web3/Web3Basics.js';
 import { getCoinDecimals, getCoinSymbol } from '../pegkeeper/Pegkeeper.js';
 import { ABI_LLAMALEND_AMM } from './Abis.js';
-import { web3Call } from '../web3Calls/generic.js';
+import { web3Call } from '../../web3/generic.js';
 export function extractParsedBorrowTokenAmountSentByBotFromReceiptForHardLiquidation(receipt, market) {
     if (!receipt)
         return null;

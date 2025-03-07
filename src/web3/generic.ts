@@ -1,10 +1,8 @@
 import { Contract } from 'web3-eth-contract';
-import { getWeb3WsProvider, getWeb3HttpProvider } from '../helperFunctions/Web3.js';
 import { EventEmitter } from 'stream';
-import { EnrichedLendingMarketEvent, TransactionReceipt } from '../Interfaces.js';
-
-const WEB3_WS_PROVIDER = getWeb3WsProvider();
-const WEB3_HTTP_PROVIDER = getWeb3HttpProvider();
+import { EnrichedLendingMarketEvent, TransactionReceipt } from '../utils/Interfaces.js';
+import { fetchEventsRealTime, registerHandler } from './AllEvents.js';
+import { web3HttpProvider } from './Web3Basics.js';
 
 function isCupsErr(err: Error): boolean {
   return err.message.includes('compute units per second capacity');
@@ -30,40 +28,7 @@ export async function getCurrentBlockNumber(): Promise<number | null> {
 
   while (shouldContinue && retries < maxRetries && !blockNumber) {
     try {
-      blockNumber = await WEB3_HTTP_PROVIDER.eth.getBlockNumber();
-    } catch (error) {
-      if (isError(error) && isCupsErr(error)) {
-        await new Promise((resolve) => setTimeout(resolve, Math.floor(Math.random() * (400 - 200 + 1) + 200)));
-      } else {
-        if (isError(error)) {
-          console.log('Error in getCurrentBlockNumber', blockNumber, error.message);
-        } else {
-          console.log('Error in getCurrentBlockNumber', blockNumber, 'Unknown error');
-        }
-        shouldContinue = false;
-      }
-    }
-
-    retries++;
-
-    if (!blockNumber && shouldContinue) {
-      await delay();
-    }
-  }
-
-  return blockNumber;
-}
-
-export async function getCurrentBlockNumber2(): Promise<number | null> {
-  const WEB3_WS_PROVIDER = getWeb3WsProvider();
-  let shouldContinue = true;
-  let retries = 0;
-  const maxRetries = 12;
-  let blockNumber: number | null = null;
-
-  while (shouldContinue && retries < maxRetries && !blockNumber) {
-    try {
-      blockNumber = await WEB3_WS_PROVIDER.eth.getBlockNumber();
+      blockNumber = await web3HttpProvider.eth.getBlockNumber();
     } catch (error) {
       if (isError(error) && isCupsErr(error)) {
         await new Promise((resolve) => setTimeout(resolve, Math.floor(Math.random() * (400 - 200 + 1) + 200)));
@@ -171,7 +136,7 @@ export async function web3Call(
 }
 
 export async function getBlockTimeStamp(blockNumber: number): Promise<number> {
-  const BLOCK = await WEB3_HTTP_PROVIDER.eth.getBlock(blockNumber);
+  const BLOCK = await web3HttpProvider.eth.getBlock(blockNumber);
   return Number(BLOCK.timestamp);
 }
 
@@ -216,49 +181,59 @@ export async function subscribeToPegkeeperEvents(CONTRACT: any, eventEmitter: Ev
 export async function subscribeToLendingMarketsEvents(
   market: EnrichedLendingMarketEvent,
   vaultContract: any,
+  vaultAddress: string,
+  vaultABI: any,
   controllerContact: any,
+  controllerAddress: string,
+  controllerABI: any,
   ammContract: any,
+  ammAddress: string,
+  ammABI: any,
   eventEmitter: EventEmitter,
   type: 'Vault' | 'Controller' | 'Amm'
 ) {
   let contract: any;
+  let address: string;
+  let abi: any;
   if (type === 'Vault') {
     contract = vaultContract;
+    address = vaultAddress;
+    abi = vaultABI;
   } else if (type === 'Controller') {
     contract = controllerContact;
+    address = controllerAddress;
+    abi = controllerABI;
   } else {
     contract = ammContract;
+    address = ammAddress;
+    abi = ammABI;
   }
 
   try {
-    const subscription = contract.events.allEvents();
-
-    subscription
-      .on('connected', () => {
-        console.log(contract._address, `subscribed to LLammaLend events successfully`);
-      })
-      .on('data', async (event: any) => {
-        console.log('LLAMMA LEND Event', event.transactionHash);
-        eventEmitter.emit('newLendingMarketsEvent', {
-          market,
-          event,
-          type,
-          vaultContract,
-          controllerContact,
-          ammContract,
+    registerHandler(async (logs) => {
+      const events = await fetchEventsRealTime(logs, address, abi, 'AllEvents');
+      if (events.length > 0) {
+        events.forEach((event: any) => {
+          console.log('LLAMMA LEND Event', event.transactionHash);
+          eventEmitter.emit('newLendingMarketsEvent', {
+            market,
+            event,
+            type,
+            vaultContract,
+            controllerContact,
+            ammContract,
+          });
         });
-      })
-      .on('error', (error: Error) => {
-        console.error('Error in event subscription: ', error);
-      });
-  } catch (err: any) {
-    console.log('Error in fetching events:', err.message);
+      }
+    });
+  } catch (err) {
+    console.log('Error in fetching events:', err);
   }
 }
 
 export async function getTxFromTxHash(txHash: string): Promise<any | null> {
   try {
-    const TX = await WEB3_HTTP_PROVIDER.eth.getTransaction(txHash);
+    const TX = await web3HttpProvider.eth.getTransaction(txHash);
     return TX;
   } catch (err) {
     console.log(err);
@@ -288,73 +263,14 @@ export async function getWalletTokenBalance(walletAddress: string, tokenAddress:
       type: 'function',
     },
   ];
-  const TOKEN = new WEB3_HTTP_PROVIDER.eth.Contract(ABI_BALANCE_OF, tokenAddress);
+  const TOKEN = new web3HttpProvider.eth.Contract(ABI_BALANCE_OF, tokenAddress);
   const BALANCE = await web3Call(TOKEN, 'balanceOf', [walletAddress], blockNumber);
   return BALANCE;
 }
 
-export async function checkWsConnectionViaNewBlocks(startTime = Date.now()): Promise<void> {
-  const RETRY_INTERVAL_MS = 10000; // Retry every 10 seconds
-  const MAX_RETRY_DURATION_MS = 120000; // Total retry duration of 2 minutes (120 seconds)
-  const BLOCK_INTERVAL_TIMEOUT_MS = 30000; // 30 seconds to wait for a new block
-  let blockTimeout: NodeJS.Timeout; // Define a timeout variable to track the 30-second interval
-
-  // Function to reset/start the 30-second block watch timeout
-  const resetBlockTimeout = () => {
-    // Clear the existing timeout
-    if (blockTimeout) clearTimeout(blockTimeout);
-
-    // Set a new timeout
-    blockTimeout = setTimeout(() => {
-      console.log('No new block has been seen in the last 30 seconds');
-    }, BLOCK_INTERVAL_TIMEOUT_MS);
-  };
-
-  try {
-    // Initialize the block watch timeout
-    resetBlockTimeout();
-
-    // Subscribe to new block headers
-    WEB3_WS_PROVIDER.eth
-      .subscribe('newBlockHeaders', async (error, blockHeader) => {
-        if (error) {
-          console.error(`Error subscribing to new block headers: ${error}`);
-          if (error.message.includes('connection not open')) {
-            const currentTime = Date.now();
-            if (currentTime - startTime < MAX_RETRY_DURATION_MS) {
-              console.log(`Retrying to subscribe in ${RETRY_INTERVAL_MS / 1000} seconds...`);
-              setTimeout(() => checkWsConnectionViaNewBlocks(startTime), RETRY_INTERVAL_MS);
-            } else {
-              console.error('Failed to subscribe to new block headers after 2 minutes.');
-            }
-          }
-          return;
-        }
-
-        // Resetting the 30-second timeout each time a new block is received
-        resetBlockTimeout();
-
-        if (blockHeader.number !== null) {
-          const newBlockNumber = blockHeader.number;
-          // console.log("New block number:", newBlockNumber);
-        }
-      })
-      .on('error', console.error);
-  } catch (err: any) {
-    console.error(`An error occurred in subscribeToNewBlocks: ${err.message}`);
-    const currentTime = Date.now();
-    if (currentTime - startTime < MAX_RETRY_DURATION_MS) {
-      console.log(`Retrying to subscribe in ${RETRY_INTERVAL_MS / 1000} seconds...`);
-      setTimeout(() => checkWsConnectionViaNewBlocks(startTime), RETRY_INTERVAL_MS);
-    } else {
-      console.error('Failed to subscribe to new block headers after 2 minutes.');
-    }
-  }
-}
-
 export async function getTxReceiptClassic(txHash: string): Promise<TransactionReceipt | null> {
   try {
-    let txReceipt = await WEB3_HTTP_PROVIDER.eth.getTransactionReceipt(txHash);
+    let txReceipt = await web3HttpProvider.eth.getTransactionReceipt(txHash);
     return txReceipt;
   } catch (error: any) {
     console.error(`Failed to fetch transaction receipt for hash: ${txHash}. Error: ${error.message}`);

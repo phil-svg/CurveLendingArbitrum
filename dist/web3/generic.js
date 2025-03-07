@@ -1,4 +1,4 @@
-import { fetchEventsRealTime, registerHandler } from '../../web3/AllEvents.js';
+import { fetchEventsRealTime, registerHandler } from './AllEvents.js';
 import { web3HttpProvider } from './Web3Basics.js';
 function isCupsErr(err) {
     return err.message.includes('compute units per second capacity');
@@ -169,7 +169,6 @@ export async function subscribeToLendingMarketsEvents(market, vaultContract, vau
         registerHandler(async (logs) => {
             const events = await fetchEventsRealTime(logs, address, abi, 'AllEvents');
             if (events.length > 0) {
-                console.log('Transfer events:', events);
                 events.forEach((event) => {
                     console.log('LLAMMA LEND Event', event.transactionHash);
                     eventEmitter.emit('newLendingMarketsEvent', {
@@ -187,32 +186,6 @@ export async function subscribeToLendingMarketsEvents(market, vaultContract, vau
     catch (err) {
         console.log('Error in fetching events:', err);
     }
-    /*
-    try {
-      const subscription = contract.events.allEvents();
-  
-      subscription
-        .on('connected', () => {
-          console.log(contract._address, `subscribed to LLammaLend events successfully`);
-        })
-        .on('data', async (event: any) => {
-          console.log('LLAMMA LEND Event', event.transactionHash);
-          eventEmitter.emit('newLendingMarketsEvent', {
-            market,
-            event,
-            type,
-            vaultContract,
-            controllerContact,
-            ammContract,
-          });
-        })
-        .on('error', (error: Error) => {
-          console.error('Error in event subscription: ', error);
-        });
-    } catch (err: any) {
-      console.log('Error in fetching events:', err.message);
-    }
-    */
 }
 export async function getTxFromTxHash(txHash) {
     try {

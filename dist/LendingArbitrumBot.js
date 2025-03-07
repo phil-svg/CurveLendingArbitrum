@@ -1,5 +1,4 @@
-import { getWeb3WsProvider } from './utils/helperFunctions/Web3.js';
-import { getCurrentBlockNumber, getPastEvents } from './utils/web3Calls/generic.js';
+import { getCurrentBlockNumber, getPastEvents } from './web3/generic.js';
 import { telegramBotMain } from './utils/telegram/TelegramBot.js';
 import { EventEmitter } from 'events';
 import { handleLiveEvents, manageMarket, watchingForNewMarketOpenings } from './utils/Oragnizer.js';
@@ -7,6 +6,8 @@ import { ADDRESS_crvUSD_ControllerFactory } from './utils/Constants.js';
 import { livemodePegKeepers } from './utils/pegkeeper/Pegkeeper.js';
 import { ABI_crvUSD_ControllerFactory } from './utils/abis/ABI_crvUSD_ControllerFactory.js';
 import { launchCurveLendingMonitoring } from './utils/Lending/LlamalendMain.js';
+import { startListeningToAllEvents } from './web3/AllEvents.js';
+import { web3WsProvider } from './web3/Web3Basics.js';
 console.clear();
 // ********************* classic crvUSD **************
 export const MIN_REPAYED_AMOUNT_WORTH_PRINTING = 100000;
@@ -27,8 +28,7 @@ const ENV = 'prod';
 // const ENV = 'test';
 const eventEmitter = new EventEmitter();
 async function launchClassicCrvUSDMonitoring() {
-    const WEB3_WS_PROVIDER = getWeb3WsProvider();
-    const crvUSD_ControllerFactory = new WEB3_WS_PROVIDER.eth.Contract(ABI_crvUSD_ControllerFactory, ADDRESS_crvUSD_ControllerFactory);
+    const crvUSD_ControllerFactory = new web3WsProvider.eth.Contract(ABI_crvUSD_ControllerFactory, ADDRESS_crvUSD_ControllerFactory);
     const crvUSD_LAUNCH_BLOCK = 17257955;
     const PRESENT = await getCurrentBlockNumber();
     await livemodePegKeepers(PRESENT, eventEmitter);
@@ -46,6 +46,7 @@ async function launchClassicCrvUSDMonitoring() {
 }
 async function main() {
     await telegramBotMain(ENV, eventEmitter);
+    startListeningToAllEvents();
     await launchCurveLendingMonitoring(eventEmitter);
 }
 await main();

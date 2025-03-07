@@ -1,4 +1,4 @@
-import { web3Call } from '../web3Calls/generic.js';
+import { web3Call } from '../../web3/generic.js';
 export async function getBorrowApr(vaultContract, blockNumber) {
     const res = await web3Call(vaultContract, 'borrow_apr', [], blockNumber);
     return res / 1e16;

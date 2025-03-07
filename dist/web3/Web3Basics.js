@@ -1,8 +1,8 @@
 import Web3 from 'web3';
-import dotenv from 'dotenv';
 import axios from 'axios';
 import Bottleneck from 'bottleneck';
 import axiosRetry from 'axios-retry';
+import dotenv from 'dotenv';
 dotenv.config({ path: '../.env' });
 export let web3HttpProvider = await getWeb3HttpProvider();
 export let web3WsProvider = getWeb3WsProvider();
@@ -30,7 +30,7 @@ async function getWeb3HttpProvider() {
     while (retries < MAX_RETRIES) {
         try {
             web3HttpProvider = new Web3(new Web3.providers.HttpProvider(process.env.WEB3_HTTP_MAINNET));
-            await web3HttpProvider.eth.net.isListening(); // This will throw an error if it can't connect
+            // await web3HttpProvider.eth.net.isListening(); // This will throw an error if it can't connect
             return web3HttpProvider;
         }
         catch (error) {
@@ -43,14 +43,14 @@ async function getWeb3HttpProvider() {
                     console.log(`HTTP Provider connection error. Attempt ${retries + 1} of ${MAX_RETRIES}. Retrying in ${RETRY_DELAY / 1000} seconds.`);
                 }
                 else {
-                    console.log(`Failed to connect to Ethereum node. Attempt ${retries + 1} of ${MAX_RETRIES}. Retrying in ${RETRY_DELAY / 1000} seconds.`);
+                    console.log(`Failed to connect to Node. Attempt ${retries + 1} of ${MAX_RETRIES}. Retrying in ${RETRY_DELAY / 1000} seconds. ${err}`);
                 }
                 retries++;
                 await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
             }
         }
     }
-    throw new Error('Failed to connect to Ethereum node after several attempts. Please check your connection and the status of the Ethereum node.');
+    throw new Error('Failed to connect to Node after several attempts. Please check your connection and the status of the Node.');
 }
 export async function getTxReceipt(txHash) {
     try {
@@ -140,8 +140,8 @@ export async function getTxWithLimiter(txHash) {
                 }
             }
         }
-        console.log(`Failed to get transaction by hash ${txHash} after several attempts. Please check your connection and the status of the Ethereum node.`);
+        console.log(`Failed to get transaction by hash ${txHash} after several attempts. Please check your connection and the status of the Node.`);
         return null;
     });
 }
-//# sourceMappingURL=Web3.js.map
+//# sourceMappingURL=Web3Basics.js.map

@@ -144,4 +144,4 @@ export async function getTxWithLimiter(txHash) {
         return null;
     });
 }
-//# sourceMappingURL=Web3.js.map
+//# sourceMappingURL=Web3Basics.js.map

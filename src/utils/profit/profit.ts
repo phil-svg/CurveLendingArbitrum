@@ -1,4 +1,4 @@
-import { getWeb3HttpProvider, getCallTraceViaRpcProvider } from '../helperFunctions/Web3.js';
+import { getCallTraceViaRpcProvider, web3HttpProvider } from '../../web3/Web3Basics.js';
 import { TransactionReceipt } from 'web3-eth';
 import { AbiItem } from 'web3-utils';
 import Big from 'big.js';
@@ -7,9 +7,8 @@ import { ABI_Tricrypto } from '../abis/ABI_Tricrypto.js';
 import { ETH_ADDRESS } from '../Constants.js';
 
 async function getEthPrice(blockNumber: number): Promise<number | null> {
-  let web3 = getWeb3HttpProvider();
   const ADDRESS_TRICRYPTO = '0xD51a44d3FaE010294C616388b506AcdA1bfAAE46';
-  const TRICRYPTO = new web3.eth.Contract(ABI_Tricrypto, ADDRESS_TRICRYPTO);
+  const TRICRYPTO = new web3HttpProvider.eth.Contract(ABI_Tricrypto, ADDRESS_TRICRYPTO);
 
   try {
     return (await TRICRYPTO.methods.price_oracle(1).call(blockNumber)) / 1e18;
@@ -19,17 +18,16 @@ async function getEthPrice(blockNumber: number): Promise<number | null> {
 }
 
 async function getCosts(txHash: string, blockNumber: number): Promise<number | null> {
-  let web3 = getWeb3HttpProvider();
   try {
-    const txReceipt = await web3.eth.getTransactionReceipt(txHash);
+    const txReceipt = await web3HttpProvider.eth.getTransactionReceipt(txHash);
     const gasUsed = txReceipt.gasUsed;
 
-    const tx = await web3.eth.getTransaction(txHash);
+    const tx = await web3HttpProvider.eth.getTransaction(txHash);
     const gasPrice = tx.gasPrice;
 
-    const cost = web3.utils.toBN(gasUsed).mul(web3.utils.toBN(gasPrice));
+    const cost = web3HttpProvider.utils.toBN(gasUsed).mul(web3HttpProvider.utils.toBN(gasPrice));
 
-    let txCostInETHER = Number(web3.utils.fromWei(cost, 'ether'));
+    let txCostInETHER = Number(web3HttpProvider.utils.fromWei(cost, 'ether'));
 
     let etherPrice = await getEthPrice(blockNumber);
     if (!etherPrice) return null;
@@ -84,7 +82,6 @@ async function adjustBalancesForDecimals(balanceChanges: BalanceChange[]): Promi
 export async function getTokenSymbol(tokenAddress: string): Promise<string | null> {
   if (tokenAddress === ETH_ADDRESS) return 'ETH';
 
-  let web3 = await getWeb3HttpProvider();
   const SYMBOL_ABI: AbiItem[] = [
     {
       inputs: [],
@@ -101,7 +98,7 @@ export async function getTokenSymbol(tokenAddress: string): Promise<string | nul
     },
   ];
 
-  const CONTRACT = new web3.eth.Contract(SYMBOL_ABI, tokenAddress);
+  const CONTRACT = new web3HttpProvider.eth.Contract(SYMBOL_ABI, tokenAddress);
   try {
     return await CONTRACT.methods.symbol().call();
   } catch (error) {
@@ -111,7 +108,6 @@ export async function getTokenSymbol(tokenAddress: string): Promise<string | nul
 
 export async function getTokenDecimals(tokenAddress: string): Promise<number | null> {
   if (tokenAddress === ETH_ADDRESS) return 18;
-  let web3 = getWeb3HttpProvider();
   const DECIMALS_ABI: AbiItem[] = [
     {
       inputs: [],
@@ -128,7 +124,7 @@ export async function getTokenDecimals(tokenAddress: string): Promise<number | n
     },
   ];
 
-  const CONTRACT = new web3.eth.Contract(DECIMALS_ABI, tokenAddress);
+  const CONTRACT = new web3HttpProvider.eth.Contract(DECIMALS_ABI, tokenAddress);
   try {
     return Number(await CONTRACT.methods.decimals().call());
   } catch (error) {
@@ -184,7 +180,6 @@ interface WithdrawalEvent {
 
 function getWithdrawalEvents(receipt: TransactionReceipt, userAddress: string): WithdrawalEvent[] {
   const withdrawalEvents: WithdrawalEvent[] = [];
-  let web3 = getWeb3HttpProvider();
 
   if (receipt.logs) {
     for (const log of receipt.logs) {
@@ -194,7 +189,7 @@ function getWithdrawalEvents(receipt: TransactionReceipt, userAddress: string): 
       }
 
       // Decode the log
-      const decodedLog: any = web3.eth.abi.decodeLog(
+      const decodedLog: any = web3HttpProvider.eth.abi.decodeLog(
         [
           { type: 'address', indexed: true, name: 'src' },
           { type: 'uint256', indexed: false, name: 'wad' },
@@ -258,7 +253,6 @@ async function calculateAbsDollarBalance(decimalAdjustedBalanceChanges: any[], b
 
 function getTransferEvents(receipt: TransactionReceipt, userAddress: string): TransferEvent[] {
   const transferEvents: TransferEvent[] = [];
-  let web3 = getWeb3HttpProvider();
 
   if (receipt.logs) {
     for (const log of receipt.logs) {
@@ -267,7 +261,7 @@ function getTransferEvents(receipt: TransactionReceipt, userAddress: string): Tr
       }
 
       // Decode the log
-      const decodedLog: any = web3.eth.abi.decodeLog(
+      const decodedLog: any = web3HttpProvider.eth.abi.decodeLog(
         [
           { type: 'address', indexed: true, name: 'from' },
           { type: 'address', indexed: true, name: 'to' },

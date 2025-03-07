@@ -2,8 +2,7 @@ import fs from 'fs';
 import { writeFile } from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { getWeb3WsProvider } from './helperFunctions/Web3.js';
-import { getPastEvents, getTxFromTxHash, subscribeToEvents } from './web3Calls/generic.js';
+import { getPastEvents, getTxFromTxHash, subscribeToEvents } from '../web3/generic.js';
 import {
   hasUndefinedOrNaNValues,
   processBorrowEvent,
@@ -23,6 +22,7 @@ import { MIN_REPAYED_AMOUNT_WORTH_PRINTING } from '../LendingArbitrumBot.js';
 import { ABI_AMM } from './abis/ABI_AMM.js';
 import { ABI_Controller } from './abis/ABI_Controller.js';
 import { getDSProxyOwner, isDefiSaverSmartWallet } from './defisaver/DefiSaver.js';
+import { web3HttpProvider, web3WsProvider } from '../web3/Web3Basics.js';
 
 export async function watchingForNewMarketOpenings(crvUSD_ControllerFactory: any, eventEmitter: any) {
   const subscription = crvUSD_ControllerFactory.events.AddMarket();
@@ -71,15 +71,13 @@ export let lastSeenTxHash: string | null = null;
 export let lastSeenTxTimestamp: Date | null = null;
 
 export async function manageMarket(MARKET: any, eventEmitter: any): Promise<void> {
-  const WEB3_WS_PROVIDER = getWeb3WsProvider();
-
   const ADDRESS_COLLATERAL = MARKET.returnValues.collateral;
 
   const ADDRESS_CONTROLLER = MARKET.returnValues.controller;
-  const CONTROLLER_CONTRACT = new WEB3_WS_PROVIDER.eth.Contract(ABI_Controller, ADDRESS_CONTROLLER);
+  const CONTROLLER_CONTRACT = new web3HttpProvider.eth.Contract(ABI_Controller, ADDRESS_CONTROLLER);
 
   const ADDRESS_AMM = MARKET.returnValues.amm;
-  const AMM_CONTRACT = new WEB3_WS_PROVIDER.eth.Contract(ABI_AMM, ADDRESS_AMM);
+  const AMM_CONTRACT = new web3HttpProvider.eth.Contract(ABI_AMM, ADDRESS_AMM);
 
   console.log('ADDRESS_COLLATERAL', ADDRESS_COLLATERAL);
   console.log('ADDRESS_CONTROLLER', ADDRESS_CONTROLLER);
@@ -185,11 +183,10 @@ export async function handleLiveEvents(eventEmitter: any) {
     // for command checking when was the last seen tx.
     await saveLastSeenToFile(EVENT.transactionHash, new Date());
     console.log('New Event picked up by the Emitter:', EVENT.transactionHash);
-    const WEB3_WS_PROVIDER = getWeb3WsProvider();
     const ADDRESS_COLLATERAL = MARKET.returnValues.collateral;
     const ADDRESS_CONTROLLER = MARKET.returnValues.controller;
     const AMM_ADDRESS = MARKET.returnValues.amm;
-    const CONTROLLER_CONTRACT = new WEB3_WS_PROVIDER.eth.Contract(ABI_Controller, ADDRESS_CONTROLLER);
+    const CONTROLLER_CONTRACT = new web3WsProvider.eth.Contract(ABI_Controller, ADDRESS_CONTROLLER);
 
     // DEFI-SAVER START
     const txHash = (EVENT as { transactionHash: string }).transactionHash;
