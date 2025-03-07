@@ -35,8 +35,6 @@ async function getWeb3HttpProvider(): Promise<Web3> {
   const RETRY_DELAY = 5000; // Delay between retries in milliseconds
   let retries = 0;
 
-  console.log('hi', process.env.WEB3_HTTP_MAINNET);
-
   while (retries < MAX_RETRIES) {
     try {
       web3HttpProvider = new Web3(new Web3.providers.HttpProvider(process.env.WEB3_HTTP_MAINNET!));
