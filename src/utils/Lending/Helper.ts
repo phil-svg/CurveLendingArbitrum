@@ -1,4 +1,3 @@
-import { dir } from 'console';
 import { EnrichedLendingMarketEvent, EthereumEvent, LendingMarketEvent, TransactionReceipt } from '../Interfaces.js';
 import { web3HttpProvider } from '../../web3/Web3Basics.js';
 import { getCoinDecimals, getCoinSymbol } from '../pegkeeper/Pegkeeper.js';

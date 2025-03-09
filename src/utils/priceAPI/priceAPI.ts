@@ -4,7 +4,6 @@ import {
   ADDRESS_PRICE_ORACLE_sfrxETH,
   ADDRESS_TRICRYPTO,
   ADDRESS_crvUSD_CONTROLLER,
-  ADDRESS_crvUSD_PRICE_AGGREGATOR,
   ADDRESS_crvUSD_PRICE_AGGREGATOR_2nd,
 } from '../Constants.js';
 import { ABI_Controller } from '../abis/ABI_Controller.js';

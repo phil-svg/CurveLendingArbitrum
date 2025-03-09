@@ -167,8 +167,8 @@ export async function subscribeToPegkeeperEvents(CONTRACT: any, eventEmitter: Ev
       .on('connected', () => {
         console.log(CONTRACT._address, `subscribed to events successfully`);
       })
-      .on('data', async (eventData: any) => {
-        eventEmitter.emit('newPegKeeperEvent', eventData);
+      .on('data', async (event: any) => {
+        eventEmitter.emit('newPegKeeperEvent', event);
       })
       .on('error', (error: Error) => {
         console.error('Error in event subscription: ', error);
